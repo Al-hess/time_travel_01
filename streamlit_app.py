@@ -1,9 +1,30 @@
 import streamlit as st
-import pandas as pd
+from datetime import date
+
+st.set_page_config(page_title="LevarT EmiT - Time Travel", page_icon="⏳")
+
 st.title("⏳ LevarT EmiT - Time Travel")
-st.write("The Future of tourism.")
+st.write("The Future of Tourism.")
 
+# =========================
+# 👤 CUSTOMER IDENTITY
+# =========================
+st.header("👤 Traveler Identity")
 
+col1, col2 = st.columns(2)
+
+with col1:
+    first_name = st.text_input("First Name")
+    last_name = st.text_input("Last Name")
+
+with col2:
+    birth_date = st.date_input("Birth Date", min_value=date(1900,1,1))
+
+st.divider()
+
+# =========================
+# 📦 PACKAGE SELECTION
+# =========================
 st.sidebar.header("Select Your Package")
 
 packages = {
@@ -13,43 +34,96 @@ packages = {
 }
 
 package = st.sidebar.selectbox("Package", list(packages.keys()))
+
 minutes = st.sidebar.slider("Minutes in Timeline", 1, 2880, 60)
-minutes = st.sidebar.text_input("Minutes:")
+
+# =========================
+# 🌍 TIMELINE SELECTION
+# =========================
+st.header("🌍 Choose Timeline")
 
 timeline = st.selectbox(
-    "Choose Timeline - the favourites",
-    ["Dinosaurs Era (-65'000'000)",
-     "Ancient Greece (-1000)",
-    "Ancient Rome (-50)",
-    "Medieval Europe (1350)",
-    "Industrial revolution (1800)",
-    "WW2 (1940)", 
-    "Personalized"]
+    "Favorite Timelines",
+    [
+        "Dinosaurs Era (-65'000'000)",
+        "Ancient Greece (-1000)",
+        "Ancient Rome (-50)",
+        "Medieval Europe (1350)",
+        "Industrial Revolution (1800)",
+        "WW2 (1940)",
+        "Personalized"
+    ]
 )
-if timeline=="Personalized":
-    timeline = st.text_input("Enter your Timeline (year):")
 
+if timeline == "Personalized":
+    timeline = st.text_input("Enter Custom Timeline (Year)")
 
+# =========================
+# 👑 IDENTITY FAME (Premium Only)
+# =========================
 identity_multiplier = 1.0
+fame = 0
+
 if package != "Peasant Package":
+    st.header("👑 Fame & Status")
     fame = st.selectbox("Select Identity Fame Level", [1,2,3,4,5])
     identity_multiplier = 1 + (fame * 0.2)
 
-insurance = st.checkbox("Add Insurance (200$)")
-memory_reset = st.checkbox("Add possible memory reset (100$)")
+# =========================
+# 🗣 LANGUAGE OPTIONS (Quantum Only)
+# =========================
+language_cost = 0
 
-base_price = packages[package] * minutes
-total_price = base_price * identity_multiplier
+if package == "Quantum Query":
+    st.header("🗣 Select Languages")
+    languages = st.multiselect(
+        "Choose Languages ($50 each)",
+        ["Latin", "Ancient Greek", "Old French", "Germanic", "Martian Basic"]
+    )
+    language_cost = 50 * len(languages)
 
-if insurance:
-    total_price += 200
-if memory_reset:
-    total_price += 100
+# =========================
+# 🛡 ADD-ONS
+# =========================
+st.header("🛡 Add-ons")
 
-st.subheader("💰 Price Calculation")
-st.write(f"Base price: ${base_price:.2f}")
-st.write(f"Identity multiplier: x{identity_multiplier}")
-st.write(f"Total price: ${total_price:.2f}")
+insurance = st.checkbox("Insurance Protection ($200)")
+memory_reset = st.checkbox("Memory Reset ($100)")
 
+insurance_cost = 200 if insurance else 0
+memory_cost = 100 if memory_reset else 0
+
+# =========================
+# 💰 PRICE CALCULATION
+# =========================
+base_fee = packages[package]
+base_price = minutes * base_fee
+premium_price = base_price * identity_multiplier
+
+total_price = premium_price + insurance_cost + memory_cost + language_cost
+
+st.subheader("💰 Price Breakdown")
+
+st.write(
+    f"({minutes} min × ${base_fee})"
+    f"{' × Fame Multiplier' if fame > 0 else ''}"
+    f" + ${insurance_cost} (Insurance)"
+    f" + ${memory_cost} (Memory Reset)"
+    f" + ${language_cost} (Languages)"
+)
+
+st.write("—" * 40)
+
+st.success(f"TOTAL = ${total_price:,.2f}")
+
+# =========================
+# 🚀 CONFIRM BOOKING
+# =========================
 if st.button("Confirm Booking"):
-    st.success("🚀 Booking Confirmed! Our MinuteMen will monitor your travel.")
+    if not first_name or not last_name:
+        st.error("Please enter traveler identity.")
+    else:
+        st.success(
+            f"🚀 Booking Confirmed for {first_name} {last_name}!\n\n"
+            "Our MinuteMen will monitor your travel."
+        )
