@@ -129,14 +129,24 @@ if package != "Peasant Package":
 # 🗣 LANGUAGES
 # =========================
 language_cost = 0
+selected_languages = []
 
 if package == "Quantum Query":
     st.header("🗣 Select Languages")
+
     languages = st.multiselect(
         "Choose Languages ($50 each)",
-        ["Latin", "Ancient Greek", "Old French", "Germanic", "Martian Basic"]
+        ["Latin", "Ancient Greek", "Old French", "Germanic", "Other..."]
     )
-    language_cost = 50 * len(languages)
+
+    if "Other..." in languages:
+        custom_language = st.text_input("Enter Custom Language")
+        if custom_language:
+            selected_languages.append(custom_language)
+
+    selected_languages += [lang for lang in languages if lang != "Other..."]
+
+    language_cost = 50 * len(selected_languages)
 
 # =========================
 # 🛡 ADD-ONS
@@ -144,32 +154,56 @@ if package == "Quantum Query":
 st.header("🛡 Add-ons")
 
 insurance = st.checkbox("Insurance Protection ($200)")
+if insurance:
+    with st.expander("Insurance Description"):
+        st.write("""
+        Covers:
+        - Physical injury protection  
+        - Emergency extraction  
+        - Timeline instability shielding  
+        """)
+
 memory_reset = st.checkbox("Memory Reset ($100)")
+if memory_reset:
+    with st.expander("Memory Reset Description"):
+        st.write("""
+        Optional traumatic event erasure.  
+        Note: Pain during the event cannot be prevented.
+        """)
 
 insurance_cost = 200 if insurance else 0
 memory_cost = 100 if memory_reset else 0
-
-st.divider()
 
 # =========================
 # 💰 PRICE CALCULATION
 # =========================
 base_price = minutes * base_fee
-premium_price = base_price * identity_multiplier
+fame_extra = base_price * (identity_multiplier - 1)
+premium_price = base_price + fame_extra
 
 total_price = premium_price + insurance_cost + memory_cost + language_cost
 
-st.header("💰 Price Breakdown")
+st.header("💰 Booking Invoice")
 
-st.write(
-    f"{minutes} min × ${base_fee}"
-    f"{' × Fame Multiplier' if fame > 0 else ''}"\n
-    f" + ${insurance_cost} (Insurance)"\n
-    f" + ${memory_cost} (Memory Reset)"\n
-    f" + ${language_cost} (Languages)"\n
-)
+st.markdown("### 🧾 Cost Breakdown")
 
-st.success(f"TOTAL = ${total_price:,.2f}")
+st.write(f"⏳ Travel Time: {minutes} min × ${base_fee} = **${base_price:,.2f}**")
+
+if fame > 0:
+    st.write(f"👑 Fame Multiplier Adjustment = **+${fame_extra:,.2f}**")
+
+if language_cost > 0:
+    st.write(f"🗣 Languages ({len(selected_languages)} × $50) = **+${language_cost:,.2f}**")
+
+if insurance:
+    st.write(f"🛡 Insurance Protection = **+${insurance_cost:,.2f}**")
+
+if memory_reset:
+    st.write(f"🧠 Memory Reset = **+${memory_cost:,.2f}**")
+
+st.markdown("---")
+
+st.markdown(f"# 💵 TOTAL = ${total_price:,.2f}")
 
 # =========================
 # 🚀 CONFIRM
