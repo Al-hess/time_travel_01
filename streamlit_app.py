@@ -28,8 +28,7 @@ timeline = st.selectbox(
 )
 if timeline=="Personalized":
     timeline = st.text_input("Enter your Timeline (year):")
-    if timeline>2025:
-        st.write('No future travel... yet')
+
 
 identity_multiplier = 1.0
 if package != "Peasant Package":
