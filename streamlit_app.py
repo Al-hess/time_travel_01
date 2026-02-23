@@ -14,7 +14,7 @@ packages = {
 
 package = st.sidebar.selectbox("Package", list(packages.keys()))
 minutes = st.sidebar.slider("Minutes in Timeline", 1, 2880, 60)
-minutes = st.text_input("Minutes:")
+minutes = st.sidebar.text_input("Minutes:")
 
 timeline = st.selectbox(
     "Choose Timeline - the favourites",
