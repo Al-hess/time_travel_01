@@ -13,12 +13,21 @@ packages = {
 }
 
 package = st.sidebar.selectbox("Package", list(packages.keys()))
-minutes = st.sidebar.slider("Minutes in Timeline", 1, 300, 60)
+minutes = st.sidebar.slider("Minutes in Timeline", 1, 1440, 60)
 
 timeline = st.selectbox(
-    "Choose Timeline",
-    ["Ancient Rome (-50)", "Medieval Europe (1350)", "Future Mars Colony (2150)"]
+    "Choose Timeline - the favourites",
+    ["Dinosaurs Era (-65'000'000)",
+     "Ancient Greece (-1000)",
+    "Ancient Rome (-50)",
+    "Medieval Europe (1350)",
+    "Industrial revolution (1800)",
+    "WW2 (1940)", 
+    "Personalized"]
 )
+if timeline=="Personalized":
+    
+    st.text_input("Enter your Timeline (year):")
 
 identity_multiplier = 1.0
 if package != "Peasant Package":
@@ -42,4 +51,4 @@ st.write(f"Identity multiplier: x{identity_multiplier}")
 st.write(f"Total price: ${total_price:.2f}")
 
 if st.button("Confirm Booking"):
-    st.success("🚀 Booking Confirmed! minuteMEN will monitor your travel.")
+    st.success("🚀 Booking Confirmed! Our MinuteMen will monitor your travel.")
