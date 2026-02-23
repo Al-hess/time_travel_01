@@ -30,15 +30,20 @@ st.header("📦 Choose Your Package")
 packages = {
     "Peasant Package": {
         "price": 10,
-        "description": "👻 Ghost mode. You like safaris and don't know how to interact with people ? This is the right package for you. With the "Peasant Package", you'll be able to discover a new timeline without having to hold a conversation !" 
+        "description": '👻 Ghost mode. You like safaris and don\'t know how to interact with people? '
+                       'This is the right package for you. With the "Peasant Package", '
+                       "you'll be able to discover a new timeline without holding a conversation!"
     },
     "Quantum Query": {
         "price": 20,
-        "description": "🗣 Interact with people and objects. Are you curious about social norms and want to be included ? The "Quantum Query" is the perfect fit. Our MinuteMen will be happy to help you choose the right languages for your vacation ! "
+        "description": '🗣 Interact with people and objects. Are you curious about social norms '
+                       'and want to be included? The "Quantum Query" is the perfect fit. '
+                       "Our MinuteMen will help you choose the right languages!"
     },
     "Monarch Mode": {
         "price": 50,
-        "description": "👑 Full power. Bring objects back. All languages included. Fast travel enabled. You will enjoy this ride more than the cold side of a pillow in a summer night."
+        "description": '👑 Full power. Bring objects back. All languages included. '
+                       "Fast travel enabled. Better than the cold side of a pillow in summer."
     }
 }
 
