@@ -1,19 +1,45 @@
 import streamlit as st
-from database import get_connection
-
-st.title("⏳ ChronoVoyage")
+import pandas as pd
+st.title("⏳ LevarT EmiT - Time Travel")
 st.write("The Future of tourism.")
-conn = get_connection()
-cursor = conn.cursor()
 
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS Customers (
-    customer_id INTEGER PRIMARY KEY,
-    first_name TEXT,
-    last_name TEXT,
-    email TEXT
+
+st.sidebar.header("Select Your Package")
+
+packages = {
+    "Peasant Package": 5,
+    "Quantum Query": 15,
+    "Monarch Mode": 50
+}
+
+package = st.sidebar.selectbox("Package", list(packages.keys()))
+minutes = st.sidebar.slider("Minutes in Timeline", 1, 300, 60)
+
+timeline = st.selectbox(
+    "Choose Timeline",
+    ["Ancient Rome (-50)", "Medieval Europe (1350)", "Future Mars Colony (2150)"]
 )
-""")
 
-conn.commit()
-conn.close()
+identity_multiplier = 1.0
+if package != "Peasant Package":
+    fame = st.selectbox("Select Identity Fame Level", [1,2,3,4,5])
+    identity_multiplier = 1 + (fame * 0.2)
+
+insurance = st.checkbox("Add Insurance (200$)")
+memory_reset = st.checkbox("Add Memory Reset (150$)")
+
+base_price = packages[package] * minutes
+total_price = base_price * identity_multiplier
+
+if insurance:
+    total_price += 200
+if memory_reset:
+    total_price += 150
+
+st.subheader("💰 Price Calculation")
+st.write(f"Base price: ${base_price:.2f}")
+st.write(f"Identity multiplier: x{identity_multiplier}")
+st.write(f"Total price: ${total_price:.2f}")
+
+if st.button("Confirm Booking"):
+    st.success("🚀 Booking Confirmed! minuteMEN will monitor your travel.")
