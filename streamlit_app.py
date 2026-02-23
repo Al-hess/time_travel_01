@@ -16,9 +16,12 @@ col1, col2 = st.columns(2)
 with col1:
     first_name = st.text_input("First Name")
     last_name = st.text_input("Last Name")
+    phone = st.text_input("Phone number")
 
 with col2:
     birth_date = st.date_input("Birth Date", min_value=date(1900,1,1))
+    address = st.text_input("Address")
+    country = st.text_input("Country")
 
 st.divider()
 
@@ -162,18 +165,15 @@ insurance = st.checkbox("Insurance Protection ($200)")
 if insurance:
     with st.expander("Insurance Description"):
         st.write("""
-        Covers:
-        - Physical injury protection  
-        - Emergency extraction  
-        - Timeline instability shielding  
+        Covers physical injury protection : No physical injury at the comeback from the trip 
+        Note: Pain during the event cannot be prevented.
         """)
 
 memory_reset = st.checkbox("Memory Reset ($100)")
 if memory_reset:
     with st.expander("Memory Reset Description"):
         st.write("""
-        Optional traumatic event erasure.  
-        Note: Pain during the event cannot be prevented.
+        Optional traumatic event erasure.   
         """)
 
 insurance_cost = 200 if insurance else 0
