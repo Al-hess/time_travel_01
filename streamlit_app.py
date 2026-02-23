@@ -13,7 +13,8 @@ packages = {
 }
 
 package = st.sidebar.selectbox("Package", list(packages.keys()))
-minutes = st.sidebar.slider("Minutes in Timeline", 1, 1440, 60)
+minutes = st.sidebar.slider("Minutes in Timeline", 1, 2880, 60)
+minutes = st.text_input("Minutes:")
 
 timeline = st.selectbox(
     "Choose Timeline - the favourites",
@@ -26,8 +27,9 @@ timeline = st.selectbox(
     "Personalized"]
 )
 if timeline=="Personalized":
-    
-    st.text_input("Enter your Timeline (year):")
+    timeline = st.text_input("Enter your Timeline (year):")
+    if timeline>2025:
+        st.write('No future travel... yet')
 
 identity_multiplier = 1.0
 if package != "Peasant Package":
@@ -35,7 +37,7 @@ if package != "Peasant Package":
     identity_multiplier = 1 + (fame * 0.2)
 
 insurance = st.checkbox("Add Insurance (200$)")
-memory_reset = st.checkbox("Add Memory Reset (150$)")
+memory_reset = st.checkbox("Add possible memory reset (100$)")
 
 base_price = packages[package] * minutes
 total_price = base_price * identity_multiplier
@@ -43,7 +45,7 @@ total_price = base_price * identity_multiplier
 if insurance:
     total_price += 200
 if memory_reset:
-    total_price += 150
+    total_price += 100
 
 st.subheader("💰 Price Calculation")
 st.write(f"Base price: ${base_price:.2f}")
