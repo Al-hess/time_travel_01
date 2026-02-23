@@ -29,16 +29,16 @@ st.header("📦 Choose Your Package")
 
 packages = {
     "Peasant Package": {
-        "price": 5,
-        "description": "👻 Ghost mode. Observe freely but cannot interact."
+        "price": 10,
+        "description": "👻 Ghost mode. You like safaris and don't know how to interact with people ? This is the right package for you. With the "Peasant Package", you'll be able to discover a new timeline without having to hold a conversation !" 
     },
     "Quantum Query": {
-        "price": 15,
-        "description": "🗣 Interact with people and objects. Languages sold separately."
+        "price": 20,
+        "description": "🗣 Interact with people and objects. Are you curious about social norms and want to be included ? The "Quantum Query" is the perfect fit. Our MinuteMen will be happy to help you choose the right languages for your vacation ! "
     },
     "Monarch Mode": {
         "price": 50,
-        "description": "👑 Full power. Bring objects back. All languages included. Fast travel enabled."
+        "description": "👑 Full power. Bring objects back. All languages included. Fast travel enabled. You will enjoy this ride more than the cold side of a pillow in a summer night."
     }
 }
 
@@ -163,10 +163,10 @@ st.header("💰 Price Breakdown")
 
 st.write(
     f"{minutes} min × ${base_fee}"
-    f"{' × Fame Multiplier' if fame > 0 else ''}"
-    f" + ${insurance_cost} (Insurance)"
-    f" + ${memory_cost} (Memory Reset)"
-    f" + ${language_cost} (Languages)"
+    f"{' × Fame Multiplier' if fame > 0 else ''}"\n
+    f" + ${insurance_cost} (Insurance)"\n
+    f" + ${memory_cost} (Memory Reset)"\n
+    f" + ${language_cost} (Languages)"\n
 )
 
 st.success(f"TOTAL = ${total_price:,.2f}")
