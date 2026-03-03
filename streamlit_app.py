@@ -140,40 +140,48 @@ if package == "Quantum Query":
     if "selected_languages" not in st.session_state:
         st.session_state.selected_languages = []
 
-    if "custom_language_added" not in st.session_state:
-        st.session_state.custom_language_added = False
+    if "custom_input" not in st.session_state:
+        st.session_state.custom_input = ""
 
-    # Base language list
-    base_languages = ["Latin", "Ancient Greek", "Old French", "Germanic", "Other..."]
+    # Base languages
+    base_languages = ["Latin", "Ancient Greek", "Old French", "Germanic"]
 
-    # Multiselect
-    selected = st.multiselect(
-        "Choose Languages",
+    # Select predefined languages
+    predefined = st.multiselect(
+        "Choose Predefined Languages",
         base_languages,
         default=[lang for lang in st.session_state.selected_languages if lang in base_languages]
     )
 
-    # If Other is selected → show input
-    if "Other..." in selected:
-        custom_language = st.text_input("Enter Custom Language and press Enter")
-
-        if custom_language:
-            if custom_language not in st.session_state.selected_languages:
-                st.session_state.selected_languages.append(custom_language)
-            st.session_state.custom_language_added = True
-
-    # Update selected languages (excluding "Other...")
+    # Update session state with predefined selections
     st.session_state.selected_languages = [
-        lang for lang in selected if lang != "Other..."
-    ] + [
-        lang for lang in st.session_state.selected_languages
-        if lang not in base_languages
-    ]
+        lang for lang in st.session_state.selected_languages if lang not in base_languages
+    ] + predefined
 
-    # Remove duplicates
-    st.session_state.selected_languages = list(set(st.session_state.selected_languages))
+    st.markdown("### Add Custom Language")
+
+    col1, col2 = st.columns([3,1])
+
+    with col1:
+        custom_language = st.text_input(
+            "Write language name",
+            key="custom_input"
+        )
+
+    with col2:
+        if st.button("Add"):
+            if custom_language and custom_language not in st.session_state.selected_languages:
+                st.session_state.selected_languages.append(custom_language)
+                st.session_state.custom_input = ""
+
+    # Remove duplicates safely
+    st.session_state.selected_languages = list(dict.fromkeys(st.session_state.selected_languages))
 
     language_cost = 50 * len(st.session_state.selected_languages)
+
+else:
+    # Reset languages if user switches package
+    st.session_state.selected_languages = []
 # =========================
 # 🛡 ADD-ONS
 # =========================
