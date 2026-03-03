@@ -4,18 +4,23 @@ from datetime import date
 st.set_page_config(page_title="LevarT EmiT - Time Travel", page_icon="⏳", layout="wide")
 
 st.title("⏳ LevarT EmiT - Time Travel")
-st.write("The Future of Tourism.")
+st.write("### The Future of Tourism.")
+st.caption("Travel across timelines safely, legally, and without butterfly effects.")
+
+st.divider()
 
 # =========================
 # 👤 TRAVELER IDENTITY
 # =========================
 st.header("👤 Traveler Identity")
+st.caption("Provide your personal information for timeline authorization and legal validation.")
+
 col1, col2 = st.columns(2)
 
 with col1:
     first_name = st.text_input("First Name")
     last_name = st.text_input("Last Name")
-    phone = st.text_input("Phone number")
+    phone = st.text_input("Phone Number")
 
 with col2:
     birth_date = st.date_input("Birth Date", min_value=date(1900,1,1))
@@ -25,46 +30,58 @@ with col2:
 st.divider()
 
 # =========================
-# 📦 PACKAGE SELECTION (NOW MAIN PAGE)
+# 📦 PACKAGE SELECTION
 # =========================
 st.header("📦 Choose Your Package")
+st.caption("Each package determines your interaction level inside the selected timeline.")
 
 packages = {
     "Peasant Package": {
         "price": 10,
-        "description": '👻 Ghost mode. You like safaris and don\'t know how to interact with people? '
-                       'This is the right package for you. With the "Peasant Package", '
-                       "you'll be able to discover a new timeline without holding a conversation!"
+        "description": '👻 Ghost mode. Observe freely but cannot interact with people or objects.'
     },
     "Quantum Query": {
         "price": 20,
-        "description": '🗣 Interact with people and objects. Are you curious about social norms '
-                       'and want to be included? The "Quantum Query" is the perfect fit. '
-                       "Our MinuteMen will help you choose the right languages!"
+        "description": '🗣 Interact with people and objects. Languages must be purchased separately.'
     },
     "Monarch Mode": {
         "price": 50,
-        "description": '👑 Full power. Bring objects back. All languages included. '
-                       "Fast travel enabled. Better than the cold side of a pillow in summer."
+        "description": '👑 Full power. Bring objects back. All languages included. Fast travel enabled.'
     }
 }
 
 package = st.selectbox("Select Package", list(packages.keys()))
 
-# Sidebar description (dynamic)
 st.sidebar.header("📖 Package Description")
 st.sidebar.info(packages[package]["description"])
 
 base_fee = packages[package]["price"]
 
+# =========================
+# 👑 IDENTITY & STATUS (Moved Here)
+# =========================
+identity_multiplier = 1.0
+fame = 0
+
+if package != "Peasant Package":
+    st.header("👑 Identity & Social Status")
+    st.caption("Choose the level of fame and influence you wish to possess in your selected timeline.")
+
+    fame = st.selectbox(
+        "Select Fame Level (1 = Unknown Citizen, 5 = Legendary Figure)",
+        [1, 2, 3, 4, 5]
+    )
+
+    identity_multiplier = 1 + (fame * 0.2)
+
 st.divider()
 
 # =========================
-# ⏳ MINUTES INPUT (SYNCED)
+# ⏳ DURATION
 # =========================
 st.header("⏳ Duration of Travel")
+st.caption("Select how long you wish to remain inside the chosen timeline. Pricing is per minute.")
 
-# Initialize session state
 if "minutes" not in st.session_state:
     st.session_state.minutes = 60
 
@@ -77,22 +94,10 @@ def update_box():
 col1, col2 = st.columns(2)
 
 with col1:
-    st.slider(
-        "Minutes in Timeline",
-        1,
-        2880,
-        key="minutes",
-        on_change=update_box
-    )
+    st.slider("Minutes in Timeline", 1, 2880, key="minutes", on_change=update_box)
 
 with col2:
-    st.number_input(
-        "Exact Minutes",
-        1,
-        2880,
-        key="minutes_box",
-        on_change=update_slider
-    )
+    st.number_input("Exact Minutes", 1, 2880, key="minutes_box", on_change=update_slider)
 
 minutes = st.session_state.minutes
 
@@ -102,6 +107,7 @@ st.divider()
 # 🌍 TIMELINE
 # =========================
 st.header("🌍 Choose Timeline")
+st.caption("Select the historical period you want to experience. No butterfly effects included.")
 
 timeline = st.selectbox(
     "Favorite Timelines",
@@ -122,22 +128,6 @@ if timeline == "Personalized":
 st.divider()
 
 # =========================
-# 👑 IDENTITY & STATUS
-# =========================
-identity_multiplier = 1.0
-fame = 0
-
-if package != "Peasant Package":
-    st.header("👑 Identity & Social Status")
-    st.caption("Choose the level of fame and influence you wish to possess in your selected timeline.")
-
-    fame = st.selectbox(
-        "Select Fame Level (1 = Unknown Citizen, 5 = Legendary Figure)",
-        [1, 2, 3, 4, 5]
-    )
-
-    identity_multiplier = 1 + (fame * 0.2)
-# =========================
 # 🗣 LANGUAGES
 # =========================
 language_cost = 0
@@ -145,10 +135,10 @@ selected_languages = []
 
 if package == "Quantum Query":
     st.header("🗣 Select Languages")
-    st.caption("As you will interact with people, you may choose 1 or more languages.")
+    st.caption("Purchase communication abilities for your selected era ($50 per language).")
 
     languages = st.multiselect(
-        "Choose Languages ($50 each)",
+        "Choose Languages",
         ["Latin", "Ancient Greek", "Old French", "Germanic", "Other..."]
     )
 
@@ -158,39 +148,50 @@ if package == "Quantum Query":
             selected_languages.append(custom_language)
 
     selected_languages += [lang for lang in languages if lang != "Other..."]
-
     language_cost = 50 * len(selected_languages)
+
+st.divider()
 
 # =========================
 # 🛡 ADD-ONS
 # =========================
 st.header("🛡 Add-ons")
-st.caption("Insurance covers physical injury protection : No physical injury at the comeback from the trip. Note: Pain during the event cannot be prevented. Memory reset covers optional traumatic event erasure. ")
-insurance = st.checkbox("Insurance Protection ($200)")
+st.caption("Enhance your safety and psychological protection during travel.")
 
+insurance = st.checkbox("Insurance Protection ($200)")
 memory_reset = st.checkbox("Memory Reset ($100)")
 
+if insurance:
+    with st.expander("Insurance Description"):
+        st.write("Prevents permanent physical injury upon return. Pain during events cannot be prevented.")
+
+if memory_reset:
+    with st.expander("Memory Reset Description"):
+        st.write("Optional traumatic event erasure upon return.")
 
 insurance_cost = 200 if insurance else 0
 memory_cost = 100 if memory_reset else 0
+
+st.divider()
 
 # =========================
 # 💰 PRICE CALCULATION
 # =========================
 base_price = minutes * base_fee
 fame_extra = base_price * (identity_multiplier - 1)
-premium_price = base_price + fame_extra
-
-total_price = premium_price + insurance_cost + memory_cost + language_cost
+subtotal = base_price + fame_extra
+addons_total = insurance_cost + memory_cost + language_cost
+total_price = subtotal + addons_total
 
 st.header("💰 Booking Invoice")
+st.caption("Transparent breakdown of your interdimensional investment.")
 
 st.markdown("### 🧾 Cost Breakdown")
 
 st.write(f"⏳ Travel Time: {minutes} min × ${base_fee} = **${base_price:,.2f}**")
 
 if fame > 0:
-    st.write(f"👑 Fame Multiplier Adjustment = **+${fame_extra:,.2f}**")
+    st.write(f"👑 Identity Upgrade = **+${fame_extra:,.2f}**")
 
 if language_cost > 0:
     st.write(f"🗣 Languages ({len(selected_languages)} × $50) = **+${language_cost:,.2f}**")
@@ -203,7 +204,13 @@ if memory_reset:
 
 st.markdown("---")
 
-st.markdown(f"# 💵 TOTAL = ${total_price:,.2f}")
+st.markdown(f"**Subtotal (Travel + Identity):** ${subtotal:,.2f}")
+st.markdown(f"**Add-ons Total:** ${addons_total:,.2f}")
+
+st.markdown("## 💵 TOTAL PRICE")
+st.markdown(f"# ${total_price:,.2f}")
+
+st.divider()
 
 # =========================
 # 🚀 CONFIRM
