@@ -131,27 +131,49 @@ st.divider()
 # 🗣 LANGUAGES
 # =========================
 language_cost = 0
-selected_languages = []
 
 if package == "Quantum Query":
     st.header("🗣 Select Languages")
     st.caption("Purchase communication abilities for your selected era ($50 per language).")
 
-    languages = st.multiselect(
+    # Initialize session state
+    if "selected_languages" not in st.session_state:
+        st.session_state.selected_languages = []
+
+    if "custom_language_added" not in st.session_state:
+        st.session_state.custom_language_added = False
+
+    # Base language list
+    base_languages = ["Latin", "Ancient Greek", "Old French", "Germanic", "Other..."]
+
+    # Multiselect
+    selected = st.multiselect(
         "Choose Languages",
-        ["Latin", "Ancient Greek", "Old French", "Germanic", "Other..."]
+        base_languages,
+        default=[lang for lang in st.session_state.selected_languages if lang in base_languages]
     )
 
-    if "Other..." in languages:
-        custom_language = st.text_input("Enter Custom Language")
+    # If Other is selected → show input
+    if "Other..." in selected:
+        custom_language = st.text_input("Enter Custom Language and press Enter")
+
         if custom_language:
-            selected_languages.append(custom_language)
+            if custom_language not in st.session_state.selected_languages:
+                st.session_state.selected_languages.append(custom_language)
+            st.session_state.custom_language_added = True
 
-    selected_languages += [lang for lang in languages if lang != "Other..."]
-    language_cost = 50 * len(selected_languages)
+    # Update selected languages (excluding "Other...")
+    st.session_state.selected_languages = [
+        lang for lang in selected if lang != "Other..."
+    ] + [
+        lang for lang in st.session_state.selected_languages
+        if lang not in base_languages
+    ]
 
-st.divider()
+    # Remove duplicates
+    st.session_state.selected_languages = list(set(st.session_state.selected_languages))
 
+    language_cost = 50 * len(st.session_state.selected_languages)
 # =========================
 # 🛡 ADD-ONS
 # =========================
