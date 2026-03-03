@@ -126,7 +126,55 @@ if timeline == "Personalized":
     timeline = st.text_input("Enter Custom Timeline (Year)")
 
 st.divider()
+# =========================
+# 📍 SPAWN COUNTRY
+# =========================
+st.header("📍 Spawn Country")
+st.caption("Select the country where you wish to materialize in your chosen timeline.")
 
+# Full country list (ISO standard list)
+countries = [
+    "Afghanistan","Albania","Algeria","Andorra","Angola","Antigua and Barbuda",
+    "Argentina","Armenia","Australia","Austria","Azerbaijan","Bahamas","Bahrain",
+    "Bangladesh","Barbados","Belarus","Belgium","Belize","Benin","Bhutan",
+    "Bolivia","Bosnia and Herzegovina","Botswana","Brazil","Brunei","Bulgaria",
+    "Burkina Faso","Burundi","Cabo Verde","Cambodia","Cameroon","Canada",
+    "Central African Republic","Chad","Chile","China","Colombia","Comoros",
+    "Congo (Congo-Brazzaville)","Costa Rica","Croatia","Cuba","Cyprus",
+    "Czech Republic","Democratic Republic of the Congo","Denmark","Djibouti",
+    "Dominica","Dominican Republic","Ecuador","Egypt","El Salvador",
+    "Equatorial Guinea","Eritrea","Estonia","Eswatini","Ethiopia","Fiji",
+    "Finland","France","Gabon","Gambia","Georgia","Germany","Ghana","Greece",
+    "Grenada","Guatemala","Guinea","Guinea-Bissau","Guyana","Haiti",
+    "Honduras","Hungary","Iceland","India","Indonesia","Iran","Iraq",
+    "Ireland","Israel","Italy","Jamaica","Japan","Jordan","Kazakhstan",
+    "Kenya","Kiribati","Kuwait","Kyrgyzstan","Laos","Latvia","Lebanon",
+    "Lesotho","Liberia","Libya","Liechtenstein","Lithuania","Luxembourg",
+    "Madagascar","Malawi","Malaysia","Maldives","Mali","Malta",
+    "Marshall Islands","Mauritania","Mauritius","Mexico","Micronesia",
+    "Moldova","Monaco","Mongolia","Montenegro","Morocco","Mozambique",
+    "Myanmar","Namibia","Nauru","Nepal","Netherlands","New Zealand",
+    "Nicaragua","Niger","Nigeria","North Korea","North Macedonia","Norway",
+    "Oman","Pakistan","Palau","Panama","Papua New Guinea","Paraguay",
+    "Peru","Philippines","Poland","Portugal","Qatar","Romania","Russia",
+    "Rwanda","Saint Kitts and Nevis","Saint Lucia",
+    "Saint Vincent and the Grenadines","Samoa","San Marino",
+    "Sao Tome and Principe","Saudi Arabia","Senegal","Serbia","Seychelles",
+    "Sierra Leone","Singapore","Slovakia","Slovenia","Solomon Islands",
+    "Somalia","South Africa","South Korea","South Sudan","Spain","Sri Lanka",
+    "Sudan","Suriname","Sweden","Switzerland","Syria","Tajikistan",
+    "Tanzania","Thailand","Timor-Leste","Togo","Tonga",
+    "Trinidad and Tobago","Tunisia","Turkey","Turkmenistan","Tuvalu",
+    "Uganda","Ukraine","United Arab Emirates","United Kingdom",
+    "United States","Uruguay","Uzbekistan","Vanuatu","Vatican City",
+    "Venezuela","Vietnam","Yemen","Zambia","Zimbabwe"
+]
+
+spawn_country = st.selectbox(
+    "Choose Country",
+    sorted(countries),
+    index=sorted(countries).index("Switzerland") if "Switzerland" in countries else 0
+)
 # =========================
 # 🗣 LANGUAGES
 # =========================
@@ -136,52 +184,53 @@ if package == "Quantum Query":
     st.header("🗣 Select Languages")
     st.caption("Purchase communication abilities for your selected era ($50 per language).")
 
-    # Initialize session state
+    # Initialize session state safely
     if "selected_languages" not in st.session_state:
         st.session_state.selected_languages = []
 
-    if "custom_input" not in st.session_state:
-        st.session_state.custom_input = ""
+    if "custom_language" not in st.session_state:
+        st.session_state.custom_language = ""
 
-    # Base languages
+    # Function to add custom language safely
+    def add_language():
+        lang = st.session_state.custom_language.strip()
+        if lang and lang not in st.session_state.selected_languages:
+            st.session_state.selected_languages.append(lang)
+        st.session_state.custom_language = ""  # Safe reset inside callback
+
+    # Predefined languages
     base_languages = ["Latin", "Ancient Greek", "Old French", "Germanic"]
 
-    # Select predefined languages
     predefined = st.multiselect(
         "Choose Predefined Languages",
         base_languages,
         default=[lang for lang in st.session_state.selected_languages if lang in base_languages]
     )
 
-    # Update session state with predefined selections
-    st.session_state.selected_languages = [
-        lang for lang in st.session_state.selected_languages if lang not in base_languages
-    ] + predefined
+    # Keep only custom ones + selected predefined
+    custom_only = [lang for lang in st.session_state.selected_languages if lang not in base_languages]
+    st.session_state.selected_languages = custom_only + predefined
 
     st.markdown("### Add Custom Language")
 
-    col1, col2 = st.columns([3,1])
+    st.text_input(
+        "Write language name",
+        key="custom_language",
+        on_change=add_language
+    )
 
-    with col1:
-        custom_language = st.text_input(
-            "Write language name",
-            key="custom_input"
-        )
-
-    with col2:
-        if st.button("Add"):
-            if custom_language and custom_language not in st.session_state.selected_languages:
-                st.session_state.selected_languages.append(custom_language)
-                st.session_state.custom_input = ""
-
-    # Remove duplicates safely
-    st.session_state.selected_languages = list(dict.fromkeys(st.session_state.selected_languages))
+    # Display selected languages nicely
+    if st.session_state.selected_languages:
+        st.markdown("#### Selected Languages:")
+        for lang in st.session_state.selected_languages:
+            st.write(f"• {lang}")
 
     language_cost = 50 * len(st.session_state.selected_languages)
 
 else:
-    # Reset languages if user switches package
-    st.session_state.selected_languages = []
+    # Reset safely if package changes
+    if "selected_languages" in st.session_state:
+        st.session_state.selected_languages = []
 # =========================
 # 🛡 ADD-ONS
 # =========================
