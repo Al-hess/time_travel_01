@@ -191,12 +191,12 @@ if package == "Quantum Query":
     if "custom_language" not in st.session_state:
         st.session_state.custom_language = ""
 
-    # Function to add custom language safely
+    # Function to add custom language
     def add_language():
         lang = st.session_state.custom_language.strip()
         if lang and lang not in st.session_state.selected_languages:
             st.session_state.selected_languages.append(lang)
-        st.session_state.custom_language = ""  # Safe reset inside callback
+        st.session_state.custom_language = ""
 
     # Predefined languages
     base_languages = ["Latin", "Ancient Greek", "Old French", "Germanic"]
@@ -207,30 +207,39 @@ if package == "Quantum Query":
         default=[lang for lang in st.session_state.selected_languages if lang in base_languages]
     )
 
-    # Keep only custom ones + selected predefined
+    # Keep only custom ones + predefined
     custom_only = [lang for lang in st.session_state.selected_languages if lang not in base_languages]
     st.session_state.selected_languages = custom_only + predefined
 
+    # Add custom language input
     st.markdown("### Add Custom Language")
 
     st.text_input(
-        "Write language name",
+        "Write language name and press Enter",
         key="custom_language",
         on_change=add_language
     )
 
-    # Display selected languages nicely
+    # Display selected languages with delete option
     if st.session_state.selected_languages:
-        st.markdown("#### Selected Languages:")
-        for lang in st.session_state.selected_languages:
-            st.write(f"• {lang}")
+        st.markdown("#### Selected Languages")
+
+        for i, lang in enumerate(st.session_state.selected_languages):
+            col1, col2 = st.columns([5,1])
+
+            with col1:
+                st.write(f"• {lang}")
+
+            with col2:
+                if st.button("❌", key=f"delete_{i}"):
+                    st.session_state.selected_languages.pop(i)
+                    st.rerun()
 
     language_cost = 50 * len(st.session_state.selected_languages)
 
 else:
-    # Reset safely if package changes
-    if "selected_languages" in st.session_state:
-        st.session_state.selected_languages = []
+    # Reset if switching package
+    st.session_state.selected_languages = []
 # =========================
 # 🛡 ADD-ONS
 # =========================
