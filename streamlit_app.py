@@ -165,9 +165,7 @@ if package == "Quantum Query":
 # 🛡 ADD-ONS
 # =========================
 st.header("🛡 Add-ons")
-st.caption("Insurance covers physical injury protection : No physical injury at the comeback from the trip 
-        Note: Pain during the event cannot be prevented. 
-        Memory reset covers optional traumatic event erasure. ")
+st.caption("Insurance covers physical injury protection : No physical injury at the comeback from the trip. Note: Pain during the event cannot be prevented. Memory reset covers optional traumatic event erasure. ")
 insurance = st.checkbox("Insurance Protection ($200)")
 
 memory_reset = st.checkbox("Memory Reset ($100)")
