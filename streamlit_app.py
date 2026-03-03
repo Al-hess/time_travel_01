@@ -10,7 +10,6 @@ st.write("The Future of Tourism.")
 # 👤 TRAVELER IDENTITY
 # =========================
 st.header("👤 Traveler Identity")
-
 col1, col2 = st.columns(2)
 
 with col1:
@@ -123,16 +122,21 @@ if timeline == "Personalized":
 st.divider()
 
 # =========================
-# 👑 FAME LEVEL
+# 👑 IDENTITY & STATUS
 # =========================
 identity_multiplier = 1.0
 fame = 0
 
 if package != "Peasant Package":
-    st.header("👑 Fame & Status")
-    fame = st.selectbox("Select Identity Fame Level", [1,2,3,4,5])
-    identity_multiplier = 1 + (fame * 0.2)
+    st.header("👑 Identity & Social Status")
+    st.caption("Choose the level of fame and influence you wish to possess in your selected timeline.")
 
+    fame = st.selectbox(
+        "Select Fame Level (1 = Unknown Citizen, 5 = Legendary Figure)",
+        [1, 2, 3, 4, 5]
+    )
+
+    identity_multiplier = 1 + (fame * 0.2)
 # =========================
 # 🗣 LANGUAGES
 # =========================
@@ -141,6 +145,7 @@ selected_languages = []
 
 if package == "Quantum Query":
     st.header("🗣 Select Languages")
+    st.caption("As you will interact with people, you may choose 1 or more languages.")
 
     languages = st.multiselect(
         "Choose Languages ($50 each)",
@@ -160,21 +165,13 @@ if package == "Quantum Query":
 # 🛡 ADD-ONS
 # =========================
 st.header("🛡 Add-ons")
-
+st.caption("Insurance covers physical injury protection : No physical injury at the comeback from the trip 
+        Note: Pain during the event cannot be prevented. 
+        Memory reset covers optional traumatic event erasure. ")
 insurance = st.checkbox("Insurance Protection ($200)")
-if insurance:
-    with st.expander("Insurance Description"):
-        st.write("""
-        Covers physical injury protection : No physical injury at the comeback from the trip 
-        Note: Pain during the event cannot be prevented.
-        """)
 
 memory_reset = st.checkbox("Memory Reset ($100)")
-if memory_reset:
-    with st.expander("Memory Reset Description"):
-        st.write("""
-        Optional traumatic event erasure.   
-        """)
+
 
 insurance_cost = 200 if insurance else 0
 memory_cost = 100 if memory_reset else 0
