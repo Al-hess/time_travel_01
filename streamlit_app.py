@@ -256,11 +256,24 @@ st.divider()
 # =========================
 # 💰 PRICE CALCULATION
 # =========================
+
+# --- Safe defaults ---
+if "selected_languages" not in st.session_state:
+    st.session_state.selected_languages = []
+
+if package != "Quantum Query":
+    language_cost = 0
+
+# --- Calculations ---
 base_price = minutes * base_fee
 fame_extra = base_price * (identity_multiplier - 1)
 subtotal = base_price + fame_extra
 addons_total = insurance_cost + memory_cost + language_cost
 total_price = subtotal + addons_total
+
+# =========================
+# 🧾 INVOICE DISPLAY
+# =========================
 
 st.header("💰 Booking Invoice")
 st.caption("Transparent breakdown of your interdimensional investment.")
@@ -272,8 +285,11 @@ st.write(f"⏳ Travel Time: {minutes} min × ${base_fee} = **${base_price:,.2f}*
 if fame > 0:
     st.write(f"👑 Identity Upgrade = **+${fame_extra:,.2f}**")
 
-if language_cost > 0:
-    st.write(f"🗣 Languages ({len(selected_languages)} × $50) = **+${language_cost:,.2f}**")
+# Languages (safe version)
+if package == "Quantum Query" and st.session_state.selected_languages:
+    st.write("🗣 Languages:")
+    for lang in st.session_state.selected_languages:
+        st.write(f"   • {lang} - **$50.00**")
 
 if insurance:
     st.write(f"🛡 Insurance Protection = **+${insurance_cost:,.2f}**")
