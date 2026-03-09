@@ -355,7 +355,7 @@ if st.button("Confirm Booking"):
             customer_id = result[0]   # existing customer
         else:
             cursor.execute("""
-            INSERT INTO Customers
+            INSERT INTO Customer
             (first_name, last_name, phone_num, address, birthdate, email)
             VALUES (?, ?, ?, ?, ?, ?)
             """, (
