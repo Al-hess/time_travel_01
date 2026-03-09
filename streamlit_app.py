@@ -28,6 +28,7 @@ with col1:
     first_name = st.text_input("First Name")
     last_name = st.text_input("Last Name")
     phone = st.text_input("Phone Number")
+    email = st.text_input("Email")
 
 with col2:
     birth_date = st.date_input("Birth Date", min_value=date(1900,1,1))
