@@ -352,7 +352,7 @@ if st.button("Confirm Booking"):
             customer_id = result[0]   # existing customer
         else:
             cursor.execute("""
-            INSERT INTO Customer
+            INSERT INTO Customers
             (first_name, last_name, phone_num, address, birthdate, email)
             VALUES (?, ?, ?, ?, ?, ?)
             """, (
@@ -382,7 +382,7 @@ if st.button("Confirm Booking"):
 
 
         # -------------------------
-        # INSERT PACKAGE
+        # INSERT PACKAGES
         # -------------------------
         cursor.execute("""
         INSERT INTO Packages (description, fame_level, package_rate)
