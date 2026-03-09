@@ -210,7 +210,29 @@ if package == "Quantum Query":
         st.session_state.custom_language = ""
 
     # Predefined languages
-    base_languages = ["Latin", "Ancient Greek", "Old French", "Germanic"]
+    base_languages = [
+    "Sumerian", "Akkadian", "Egyptian", "Hittite", "Elamite",
+    "Sanskrit", "Prakrit", "Pali", "Old Persian", "Avestan",
+    "Ancient Greek", "Latin", "Etruscan", "Phoenician", "Aramaic",
+    "Hebrew", "Ugaritic", "Coptic", "Old Church Slavonic", "Gothic",
+    "Old English", "Middle English", "Modern English", "Old Norse", "Icelandic",
+    "Old High German", "Middle High German", "Modern German", "Yiddish", "Dutch",
+    "Old French", "Middle French", "Modern French", "Occitan", "Catalan",
+    "Italian", "Sicilian", "Spanish", "Portuguese", "Galician",
+    "Romanian", "Dacian", "Albanian", "Irish", "Scottish Gaelic",
+    "Welsh", "Breton", "Cornish", "Manx", "Basque",
+    "Finnish", "Estonian", "Hungarian", "Maltese", "Lithuanian",
+    "Latvian", "Prussian", "Old Church Slavonic", "Russian", "Ukrainian",
+    "Belarusian", "Polish", "Czech", "Slovak", "Serbo-Croatian",
+    "Bulgarian", "Macedonian", "Slovene", "Greek", "Armenian",
+    "Georgian", "Persian", "Kurdish", "Pashto", "Balochi",
+    "Urdu", "Hindi", "Bengali", "Punjabi", "Marathi",
+    "Gujarati", "Tamil", "Telugu", "Kannada", "Malayalam",
+    "Sinhalese", "Thai", "Lao", "Khmer", "Burmese",
+    "Chinese", "Classical Chinese", "Japanese", "Korean", "Vietnamese",
+    "Tibetan", "Mongolian", "Turkish", "Uzbek", "Kazakh",
+    "Azerbaijani", "Turkmen", "Tatar", "Yakut", "Chuvash"
+]
 
     predefined = st.multiselect(
         "Choose Predefined Languages",
