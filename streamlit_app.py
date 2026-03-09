@@ -13,7 +13,7 @@ def get_connection():
 
 st.set_page_config(page_title="LevarT EmiT - Time Travel", page_icon="⏳", layout="wide")
 
-st.title("⏳ LevarT EmiT - Time Travel")
+st.title("⏳ LevarT  - Time Travel")
 st.write("### The Future of Tourism.")
 st.caption("Travel across timelines safely, legally, and without butterfly effects.")
 
