@@ -1,10 +1,13 @@
 import streamlit as st
 from datetime import date
 import sqlite3 
-
+import os
 # connection function to connect to database and input values 
+
 def get_connection():
-    conn = sqlite3.connect("time_travel.db")
+    db_path = "time_travel.db"
+    print("Database path:", os.path.abspath(db_path))
+    conn = sqlite3.connect(db_path)
     return conn
 
 
