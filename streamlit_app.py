@@ -1,5 +1,12 @@
 import streamlit as st
 from datetime import date
+import sqlite3 
+
+# connection function to connect to database and input values 
+def get_connection():
+    conn = sqlite3.connect("time_travel.db")
+    return conn
+
 
 st.set_page_config(page_title="LevarT EmiT - Time Travel", page_icon="⏳", layout="wide")
 
@@ -132,7 +139,7 @@ st.divider()
 st.header("📍 Spawn Country")
 st.caption("Select the country where you wish to materialize in your chosen timeline.")
 
-# Full country list (ISO standard list)
+# Full country list
 countries = [
     "Afghanistan","Albania","Algeria","Andorra","Angola","Antigua and Barbuda",
     "Argentina","Armenia","Australia","Austria","Azerbaijan","Bahamas","Bahrain",
@@ -320,10 +327,119 @@ st.divider()
 # 🚀 CONFIRM
 # =========================
 if st.button("Confirm Booking"):
+
     if not first_name or not last_name:
         st.error("Please enter traveler identity.")
+
     else:
-        st.success(
-            f"🚀 Booking Confirmed for {first_name} {last_name}!\n\n"
-            "Our MinuteMen will monitor your travel."
+
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        # -------------------------
+        # INSERT CUSTOMER
+        # -------------------------
+        # Check if customer already exists
+        cursor.execute(
+            "SELECT customer_id FROM Customer WHERE email=?",
+            (email,)
         )
+        
+        result = cursor.fetchone()
+        
+        if result:
+            customer_id = result[0]   # existing customer
+        else:
+            cursor.execute("""
+            INSERT INTO Customer
+            (first_name, last_name, phone_num, address, birthdate, email)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """, (
+                first_name,
+                last_name,
+                phone,
+                address,
+                birth_date,
+                email
+            ))
+        
+            customer_id = cursor.lastrowid
+
+
+        # -------------------------
+        # INSERT TIMELINE
+        # -------------------------
+        cursor.execute("""
+        INSERT INTO Timeline (timeline_year, map)
+        VALUES (?, ?)
+        """, (
+            timeline,
+            spawn_country
+        ))
+
+        timeline_id = cursor.lastrowid
+
+
+        # -------------------------
+        # INSERT PACKAGE
+        # -------------------------
+        cursor.execute("""
+        INSERT INTO Packages (description, fame_level, package_rate)
+        VALUES (?, ?, ?)
+        """, (
+            package,
+            fame,
+            base_fee
+        ))
+
+        package_id = cursor.lastrowid
+
+
+        # -------------------------
+        # INSERT BOOKING
+        # -------------------------
+        cursor.execute("""
+        INSERT INTO Booking
+        (customer_id, package_id, timeline_id, spawn_country, minutes,
+         insurance, memory_reset, total_price)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            customer_id,
+            package_id,
+            timeline_id,
+            spawn_country,
+            minutes,
+            insurance,
+            memory_reset,
+            total_price
+        ))
+
+        booking_id = cursor.lastrowid
+
+
+        # -------------------------
+        # INSERT LANGUAGES
+        # -------------------------
+        for lang in st.session_state.selected_languages:
+
+            cursor.execute(
+                "INSERT OR IGNORE INTO Languages (language_name) VALUES (?)",
+                (lang,)
+            )
+
+            cursor.execute(
+                "SELECT language_id FROM Languages WHERE language_name=?",
+                (lang,)
+            )
+
+            language_id = cursor.fetchone()[0]
+
+            cursor.execute("""
+            INSERT INTO Booking_Languages (booking_id, language_id)
+            VALUES (?, ?)
+            """, (booking_id, language_id))
+
+        conn.commit()
+        conn.close()
+
+        st.success(f"🚀 Booking Confirmed for {first_name} {last_name}!")
