@@ -769,7 +769,7 @@ with tab_analytics:
         
         # Fetch timeline data
         df_tl_raw = pd.read_sql("""
-            SELECT t.timeline_year, COUNT(b.booking_id) AS Trips
+            SELECT t.timeline_year, COUNT(b.booking_id) AS trips
             FROM "Booking" b
             JOIN "Timeline" t ON b.timeline_id = t.timeline_id
             GROUP BY t.timeline_year
@@ -800,11 +800,11 @@ with tab_analytics:
         fig_tl = px.line(
             df_tl_raw,
             x='YearsAgo',
-            y='Trips',
+            y='trips',
             markers=True,
             hover_name='timeline_year',
             color_discrete_sequence=["#00D4FF"], # Vibrant Cyan
-            labels={'YearsAgo': 'Years Before Present (Log Scale)', 'Trips': 'Number of Bookings'}
+            labels={'YearsAgo': 'Years Before Present (Log Scale)', 'trips': 'Number of Bookings'}
         )
 
         # Use standard 'log' type with reversed axis (Ancient -> Modern)
@@ -822,14 +822,14 @@ with tab_analytics:
         with col_right:
             st.subheader("💰 Revenue by Package")
             df_pkg = pd.read_sql("""
-                SELECT p.description AS Package, 
-                       COUNT(b.booking_id) AS Trips,
-                       ROUND(SUM(b.total_price), 2) AS Revenue
+                SELECT p.description AS package, 
+                       COUNT(b.booking_id) AS trips,
+                       ROUND(SUM(b.total_price), 2) AS revenue
                 FROM "Booking" b
                 JOIN "Packages" p ON b.package_id = p.package_id
                 GROUP BY p.description
             """, conn_a)
-            st.bar_chart(df_pkg.set_index("Package")["Revenue"], color="#FF4B4B") # Red
+            st.bar_chart(df_pkg.set_index("package")["revenue"], color="#FF4B4B") # Red
 
         st.divider()
 
@@ -839,23 +839,23 @@ with tab_analytics:
         with col_left2:
             st.subheader("👤 Traveler Gender Split")
             df_sex = pd.read_sql("""
-                SELECT sex AS Sex, COUNT(*) AS Count
+                SELECT sex AS sex_col, COUNT(*) AS count_val
                 FROM "Customer"
                 GROUP BY sex
             """, conn_a)
-            st.bar_chart(df_sex.set_index("Sex"), color="#00FFAA") # Green/Mint
+            st.bar_chart(df_sex.set_index("sex_col"), color="#00FFAA") # Green/Mint
 
         # --- Chart 4: MinuteMen Deployments ---
         with col_right2:
             st.subheader("🕵️ MinuteMen Deployments")
             df_agents = pd.read_sql("""
-                SELECT m.agent_name AS Agent, COUNT(b.booking_id) AS Assignments
+                SELECT m.agent_name AS agent_name_col, COUNT(b.booking_id) AS assignments
                 FROM "Booking" b
                 JOIN "MinuteMen" m ON b.agent_id = m.agent_id
                 GROUP BY m.agent_name
-                ORDER BY Assignments DESC
+                ORDER BY assignments DESC
             """, conn_a)
-            st.bar_chart(df_agents.set_index("Agent"), color="#FFD700") # Gold
+            st.bar_chart(df_agents.set_index("agent_name_col"), color="#FFD700") # Gold
 
         st.divider()
 
@@ -878,14 +878,14 @@ with tab_analytics:
         with col_right3:
             st.subheader("👑 Fame Level Distribution")
             df_fame = pd.read_sql("""
-                SELECT fame_level AS "Fame Level", COUNT(*) AS Bookings
+                SELECT fame_level AS fame_level_col, COUNT(*) AS bookings
                 FROM "Booking"
                 WHERE fame_level > 0
                 GROUP BY fame_level
                 ORDER BY fame_level
             """, conn_a)
             if not df_fame.empty:
-                st.bar_chart(df_fame.set_index("Fame Level"), color="#FF8A00") # Orange
+                st.bar_chart(df_fame.set_index("fame_level_col"), color="#FF8A00") # Orange
             else:
                 st.info("No fame data yet.")
 
@@ -896,15 +896,15 @@ with tab_analytics:
         st.caption("Distribution of reported violations across all trips.")
         
         df_violations = pd.read_sql("""
-            SELECT v.crime AS Crime, COUNT(tv.trip_violation_id) AS Count
+            SELECT v.crime AS crime, COUNT(tv.trip_violation_id) AS violation_count
             FROM "Trip_Violations" tv
             JOIN "Violations" v ON tv.violation_id = v.violation_id
             GROUP BY v.crime
-            ORDER BY Count DESC
+            ORDER BY violation_count DESC
         """, conn_a)
 
         if not df_violations.empty:
-            st.bar_chart(df_violations.set_index("Crime"), color="#33FF57") # Bright Green
+            st.bar_chart(df_violations.set_index("crime"), color="#33FF57") # Bright Green
         else:
             st.info("No violations recorded. The Timeline is currently stable.")
 
