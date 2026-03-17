@@ -558,11 +558,15 @@ if st.button("Confirm Booking"):
 
         # If it's a new customer, we create a record for them
         else:
-            cursor.execute(f"""
+            customer_query = f"""
             INSERT INTO "Customer"
             (first_name, last_name, phone_num, address, birthdate, email, sex)
             VALUES ({PL}, {PL}, {PL}, {PL}, {PL}, {PL}, {PL})
-            """, (
+            """
+            if os.getenv("SUPABASE_DB_URL"):
+                customer_query += " RETURNING customer_id"
+                
+            cursor.execute(customer_query, (
                 first_name,
                 last_name,
                 phone,
@@ -573,22 +577,32 @@ if st.button("Confirm Booking"):
             ))
         
             # Retrieve the newly generated ID
-            customer_id = cursor.lastrowid
+            if os.getenv("SUPABASE_DB_URL"):
+                customer_id = cursor.fetchone()[0]
+            else:
+                customer_id = cursor.lastrowid
 
 
         # -------------------------
         # 4. INSERT TIMELINE
         # -------------------------
         # Every trip record needs its own Timeline entry (even for custom years)
-        cursor.execute(f"""
+        timeline_query = f"""
         INSERT INTO "Timeline" (timeline_year, map)
         VALUES ({PL}, {PL})
-        """, (
+        """
+        if os.getenv("SUPABASE_DB_URL"):
+            timeline_query += " RETURNING timeline_id"
+            
+        cursor.execute(timeline_query, (
             timeline,
             spawn_country
         ))
 
-        timeline_id = cursor.lastrowid
+        if os.getenv("SUPABASE_DB_URL"):
+            timeline_id = cursor.fetchone()[0]
+        else:
+            timeline_id = cursor.lastrowid
 
 
         # -------------------------
@@ -736,7 +750,7 @@ with tab_analytics:
     try:
         conn_a = get_connection()
 
-        # --- KPI (Key Perfomrance Metric) Row --- 
+        # --- KPI (Key Perfomrance indicator) Row --- 
         kpi1, kpi2, kpi3, kpi4 = st.columns(4)
 
         # Use pd.read_sql to select the 4 metrics we want to display 
