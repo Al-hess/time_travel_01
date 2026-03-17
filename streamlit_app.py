@@ -5,6 +5,7 @@ import sqlite3
 import os
 import random
 import pandas as pd
+import plotly.express as px
 import plotly as pl 
 from faker import Faker
 
