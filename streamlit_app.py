@@ -741,7 +741,8 @@ with tab_analytics:
 
         # Use pd.read_sql to select the 4 metrics we want to display 
         kpi1.metric("Total Bookings",   pd.read_sql('SELECT COUNT(*) FROM "Booking"', conn_a).iloc[0, 0])
-        kpi2.metric("Total Revenue ($)", f"{pd.read_sql('SELECT COALESCE(SUM(total_price),0) FROM \"Booking\"', conn_a).iloc[0,0]:,.0f}")
+        query_revenue = 'SELECT COALESCE(SUM(total_price),0) FROM "Booking"'
+        kpi2.metric("Total Revenue ($)", f"{pd.read_sql(query_revenue, conn_a).iloc[0,0]:,.0f}")
         kpi3.metric("Unique Travelers",  pd.read_sql('SELECT COUNT(*) FROM "Customer"', conn_a).iloc[0, 0])
         kpi4.metric("Avg Trip (min)",    round(pd.read_sql('SELECT COALESCE(AVG(minutes),0) FROM "Booking"', conn_a).iloc[0, 0], 1))
 
