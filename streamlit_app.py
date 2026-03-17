@@ -546,7 +546,7 @@ if st.button("Confirm Booking"):
         # -------------------------
         # We use email as the unique identifier to prevent duplicate entries for the same person
         cursor.execute(
-            f"SELECT customer_id FROM Customer WHERE email={PL}",
+            f'SELECT customer_id FROM "Customer" WHERE email={PL}',
             (email,)
         )
         
@@ -559,7 +559,7 @@ if st.button("Confirm Booking"):
         # If it's a new customer, we create a record for them
         else:
             cursor.execute(f"""
-            INSERT INTO Customer
+            INSERT INTO "Customer"
             (first_name, last_name, phone_num, address, birthdate, email, sex)
             VALUES ({PL}, {PL}, {PL}, {PL}, {PL}, {PL}, {PL})
             """, (
@@ -581,7 +581,7 @@ if st.button("Confirm Booking"):
         # -------------------------
         # Every trip record needs its own Timeline entry (even for custom years)
         cursor.execute(f"""
-        INSERT INTO Timeline (timeline_year, map)
+        INSERT INTO "Timeline" (timeline_year, map)
         VALUES ({PL}, {PL})
         """, (
             timeline,
@@ -595,7 +595,7 @@ if st.button("Confirm Booking"):
         # 5. GET PACKAGE ID
         # -------------------------
         # We need the primary key ID of the selected package for the Booking table
-        cursor.execute(f"SELECT package_id FROM Packages WHERE description={PL}", (package,))
+        cursor.execute(f'SELECT package_id FROM "Packages" WHERE description={PL}', (package,))
         package_id_result = cursor.fetchone()
         package_id = package_id_result[0] if package_id_result else None
 
@@ -604,7 +604,7 @@ if st.button("Confirm Booking"):
         # -------------------------
         # Every trip is monitored by an agent. We pick one at random from our pool.
         # Get all the agents (fetchall) 
-        cursor.execute("SELECT agent_id, agent_name, badge_number FROM MinuteMen")
+        cursor.execute('SELECT agent_id, agent_name, badge_number FROM "MinuteMen"')
         all_agents = cursor.fetchall()
         
         # Use random to choose and assign agent 
@@ -623,17 +623,17 @@ if st.button("Confirm Booking"):
             # Insert language if it's a "custom" one we haven't seen yet
             if os.getenv("SUPABASE_DB_URL"):
                 cursor.execute(
-                    f"INSERT INTO Languages (language_name) VALUES ({PL}) ON CONFLICT (language_name) DO NOTHING",
+                    f'INSERT INTO "Languages" (language_name) VALUES ({PL}) ON CONFLICT (language_name) DO NOTHING',
                     (lang,)
                 )
             else:
                 cursor.execute(
-                    f"INSERT OR IGNORE INTO Languages (language_name) VALUES ({PL})",
+                    f'INSERT OR IGNORE INTO "Languages" (language_name) VALUES ({PL})',
                     (lang,)
                 )
             # Retrieve the ID
             cursor.execute(
-                f"SELECT language_id FROM Languages WHERE language_name={PL}",
+                f'SELECT language_id FROM "Languages" WHERE language_name={PL}',
                 (lang,)
             )
 
@@ -649,7 +649,7 @@ if st.button("Confirm Booking"):
 
         # Add RETURNING for Postgres to get the ID back immediately
         booking_query = f"""
-        INSERT INTO Booking
+        INSERT INTO "Booking"
         (customer_id, package_id, timeline_id, spawn_country, minutes,
          insurance, memory_reset, total_price, booking_languages, fame_level, agent_id)
         VALUES ({PL}, {PL}, {PL}, {PL}, {PL}, {PL}, {PL}, {PL}, {PL}, {PL}, {PL})
@@ -692,7 +692,7 @@ if st.button("Confirm Booking"):
             random_last = fake.last_name()
             
             cursor.execute(f"""
-        INSERT INTO Identities (first_name, last_name, sex, fame_level, booking_id)
+        INSERT INTO "Identities" (first_name, last_name, sex, fame_level, booking_id)
         VALUES ({PL}, {PL}, {PL}, {PL}, {PL})
         """, (random_first, random_last, sex, fame, booking_id))
             
@@ -701,7 +701,7 @@ if st.button("Confirm Booking"):
             # -------------------------
             # Link the calculated price and payment method to this specific booking
             cursor.execute(f"""
-            INSERT INTO Payments (amount, currency, method, customer_id, booking_id)
+            INSERT INTO "Payments" (amount, currency, method, customer_id, booking_id)
             VALUES ({PL}, {PL}, {PL}, {PL}, {PL})
             """, (converted_price, currency_code, payment_method, customer_id, booking_id))
 
@@ -715,7 +715,7 @@ if st.button("Confirm Booking"):
             # 9. INSERT PAYMENT (Peasant)
             # -------------------------
             cursor.execute(f"""
-            INSERT INTO Payments (amount, currency, method, customer_id, booking_id)
+            INSERT INTO "Payments" (amount, currency, method, customer_id, booking_id)
             VALUES ({PL}, {PL}, {PL}, {PL}, {PL})
             """, (converted_price, currency_code, payment_method, customer_id, booking_id))
 
@@ -740,10 +740,10 @@ with tab_analytics:
         kpi1, kpi2, kpi3, kpi4 = st.columns(4)
 
         # Use pd.read_sql to select the 4 metrics we want to display 
-        kpi1.metric("Total Bookings",   pd.read_sql("SELECT COUNT(*) FROM Booking", conn_a).iloc[0, 0])
-        kpi2.metric("Total Revenue ($)", f"{pd.read_sql('SELECT COALESCE(SUM(total_price),0) FROM Booking', conn_a).iloc[0,0]:,.0f}")
-        kpi3.metric("Unique Travelers",  pd.read_sql("SELECT COUNT(*) FROM Customer", conn_a).iloc[0, 0])
-        kpi4.metric("Avg Trip (min)",    round(pd.read_sql("SELECT COALESCE(AVG(minutes),0) FROM Booking", conn_a).iloc[0, 0], 1))
+        kpi1.metric("Total Bookings",   pd.read_sql('SELECT COUNT(*) FROM "Booking"', conn_a).iloc[0, 0])
+        kpi2.metric("Total Revenue ($)", f"{pd.read_sql('SELECT COALESCE(SUM(total_price),0) FROM \"Booking\"', conn_a).iloc[0,0]:,.0f}")
+        kpi3.metric("Unique Travelers",  pd.read_sql('SELECT COUNT(*) FROM "Customer"', conn_a).iloc[0, 0])
+        kpi4.metric("Avg Trip (min)",    round(pd.read_sql('SELECT COALESCE(AVG(minutes),0) FROM "Booking"', conn_a).iloc[0, 0], 1))
 
         st.divider()
 
@@ -754,8 +754,8 @@ with tab_analytics:
         # Fetch timeline data
         df_tl_raw = pd.read_sql("""
             SELECT t.timeline_year, COUNT(b.booking_id) AS Trips
-            FROM Booking b
-            JOIN Timeline t ON b.timeline_id = t.timeline_id
+            FROM "Booking" b
+            JOIN "Timeline" t ON b.timeline_id = t.timeline_id
             GROUP BY t.timeline_year
         """, conn_a)
 
@@ -809,8 +809,8 @@ with tab_analytics:
                 SELECT p.description AS Package, 
                        COUNT(b.booking_id) AS Trips,
                        ROUND(SUM(b.total_price), 2) AS Revenue
-                FROM Booking b
-                JOIN Packages p ON b.package_id = p.package_id
+                FROM "Booking" b
+                JOIN "Packages" p ON b.package_id = p.package_id
                 GROUP BY p.description
             """, conn_a)
             st.bar_chart(df_pkg.set_index("Package")["Revenue"], color="#FF4B4B") # Red
@@ -824,7 +824,7 @@ with tab_analytics:
             st.subheader("👤 Traveler Gender Split")
             df_sex = pd.read_sql("""
                 SELECT sex AS Sex, COUNT(*) AS Count
-                FROM Customer
+                FROM "Customer"
                 GROUP BY sex
             """, conn_a)
             st.bar_chart(df_sex.set_index("Sex"), color="#00FFAA") # Green/Mint
@@ -834,8 +834,8 @@ with tab_analytics:
             st.subheader("🕵️ MinuteMen Deployments")
             df_agents = pd.read_sql("""
                 SELECT m.agent_name AS Agent, COUNT(b.booking_id) AS Assignments
-                FROM Booking b
-                JOIN MinuteMen m ON b.agent_id = m.agent_id
+                FROM "Booking" b
+                JOIN "MinuteMen" m ON b.agent_id = m.agent_id
                 GROUP BY m.agent_name
                 ORDER BY Assignments DESC
             """, conn_a)
@@ -848,10 +848,10 @@ with tab_analytics:
         # --- Chart 5: Add-ons Distribution ---
         with col_left3:
             st.subheader("🛡 Add-ons Combinations")
-            none_ct   = pd.read_sql(f"SELECT COUNT(*) FROM Booking WHERE insurance = {F_VAL} AND memory_reset = {F_VAL}", conn_a).iloc[0, 0]
-            ins_only  = pd.read_sql(f"SELECT COUNT(*) FROM Booking WHERE insurance = {T_VAL} AND memory_reset = {F_VAL}", conn_a).iloc[0, 0]
-            mem_only  = pd.read_sql(f"SELECT COUNT(*) FROM Booking WHERE insurance = {F_VAL} AND memory_reset = {T_VAL}", conn_a).iloc[0, 0]
-            both_ct   = pd.read_sql(f"SELECT COUNT(*) FROM Booking WHERE insurance = {T_VAL} AND memory_reset = {T_VAL}", conn_a).iloc[0, 0]
+            none_ct   = pd.read_sql(f'SELECT COUNT(*) FROM "Booking" WHERE insurance = {F_VAL} AND memory_reset = {F_VAL}', conn_a).iloc[0, 0]
+            ins_only  = pd.read_sql(f'SELECT COUNT(*) FROM "Booking" WHERE insurance = {T_VAL} AND memory_reset = {F_VAL}', conn_a).iloc[0, 0]
+            mem_only  = pd.read_sql(f'SELECT COUNT(*) FROM "Booking" WHERE insurance = {F_VAL} AND memory_reset = {T_VAL}', conn_a).iloc[0, 0]
+            both_ct   = pd.read_sql(f'SELECT COUNT(*) FROM "Booking" WHERE insurance = {T_VAL} AND memory_reset = {T_VAL}', conn_a).iloc[0, 0]
             df_addons = pd.DataFrame({
                 "Combination": ["None", "Insurance Only", "Memory Reset Only", "Both"],
                 "Bookings": [none_ct, ins_only, mem_only, both_ct]
@@ -863,7 +863,7 @@ with tab_analytics:
             st.subheader("👑 Fame Level Distribution")
             df_fame = pd.read_sql("""
                 SELECT fame_level AS "Fame Level", COUNT(*) AS Bookings
-                FROM Booking
+                FROM "Booking"
                 WHERE fame_level > 0
                 GROUP BY fame_level
                 ORDER BY fame_level
@@ -881,8 +881,8 @@ with tab_analytics:
         
         df_violations = pd.read_sql("""
             SELECT v.crime AS Crime, COUNT(tv.trip_violation_id) AS Count
-            FROM Trip_Violations tv
-            JOIN Violations v ON tv.violation_id = v.violation_id
+            FROM "Trip_Violations" tv
+            JOIN "Violations" v ON tv.violation_id = v.violation_id
             GROUP BY v.crime
             ORDER BY Count DESC
         """, conn_a)
