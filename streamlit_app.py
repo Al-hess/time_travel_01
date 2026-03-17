@@ -824,7 +824,7 @@ with tab_analytics:
             df_pkg = pd.read_sql("""
                 SELECT p.description AS package, 
                        COUNT(b.booking_id) AS trips,
-                       ROUND(SUM(b.total_price), 2) AS revenue
+                       SUM(b.total_price) AS revenue
                 FROM "Booking" b
                 JOIN "Packages" p ON b.package_id = p.package_id
                 GROUP BY p.description
