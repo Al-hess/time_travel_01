@@ -1,32 +1,44 @@
-# Import Packages 
+# streamlit_app.py
+# Main Streamlit application for the LevarT Time Travel booking platform.
+# Provides a user interface for booking trips and viewing analytics.
+# Connects to SQLite (local) or PostgreSQL via Supabase (cloud) based on environment.
+
+# Import standard and third-party packages
 import streamlit as st
 from datetime import date
-import sqlite3 
+import sqlite3
 import os
 import random
 import pandas as pd
 import plotly.express as px
-import plotly as pl 
+import plotly as pl
 from faker import Faker
 
+# Attempt to load optional packages for Supabase (PostgreSQL) connectivity
 try:
     from dotenv import load_dotenv
-    import psycopg2 
+    import psycopg2
     HAS_DB_DRIVERS = True
-    # Load environment variables if .env exists 
+    # Load .env file to make SUPABASE_DB_URL available via os.getenv()
     load_dotenv()
 except ImportError:
+    # psycopg2 / dotenv not installed — fall back to SQLite only
     HAS_DB_DRIVERS = False
 
+# fake: Faker instance — used to generate alias names for traveler identities
 fake = Faker()
 
-# Determine SQL placeholder type (SQLite uses ?, PostgreSQL uses %s)
+# PL: str — SQL placeholder character
+# PostgreSQL uses %s, SQLite uses ?
 PL = "%s" if (HAS_DB_DRIVERS and os.getenv("SUPABASE_DB_URL")) else "?"
-# Boolean values differ (SQLite uses 0/1, Postgres use TRUE/FALSE)
+
+# T_VAL / F_VAL: str — Boolean literal representation per database
+# PostgreSQL: TRUE / FALSE | SQLite: 1 / 0
 T_VAL = "TRUE" if (HAS_DB_DRIVERS and os.getenv("SUPABASE_DB_URL")) else "1"
 F_VAL = "FALSE" if (HAS_DB_DRIVERS and os.getenv("SUPABASE_DB_URL")) else "0"
 
-# get_connection function connects to database (SQLite or PostgreSQL)
+# get_connection: function — returns a live database connection
+# Checks SUPABASE_DB_URL to decide between PostgreSQL and SQLite
 def get_connection():
     """
     Establishes a connection to the database.
@@ -34,19 +46,18 @@ def get_connection():
     Otherwise, defaults to local SQLite 'time_travel.db'.
     """
     db_url = os.getenv("SUPABASE_DB_URL")
-    
+
     if HAS_DB_DRIVERS and db_url:
-        # Connect to Supabase (PostgreSQL)
-        # Using psycopg2 for direct connection 
+        # Connect to Supabase using psycopg2 with the full connection URL
         conn = psycopg2.connect(db_url)
         return conn
     else:
-        # Fallback to local SQLite 
+        # Fall back to local SQLite database file
         db_path = "time_travel.db"
         conn = sqlite3.connect(db_path)
         return conn
 
-# Page title
+# Configure the Streamlit page (title, icon, layout)
 st.set_page_config(page_title="LevarT EmiT - Time Travel", page_icon="⏳", layout="wide")
 
 st.title("⏳ LevarT  - Time Travel")
@@ -55,12 +66,12 @@ st.caption("Travel across timelines safely, legally, and without butterfly effec
 
 st.divider()
 
-# Create 2 tabs 
+# Create 2 main tabs: booking form and analytics dashboard
 tab_booking, tab_analytics = st.tabs(["Book a Trip", "Analytics"])
 
-# Create 3 expander description of the company 
+# Expander sections describing the company and legal conditions
 with st.expander("How it works"):
-    st.write(""" Levart creates a copy of the timeline you wish to visit. This method makes sure that the trip is safe and that there are no effects on our reality. Our MinuteMen agents monitor your trips and can intervene in case of any emergency. Once the trip is over, the timeline is pruned. 
+    st.write(""" Levart creates a copy of the timeline you wish to visit. This method makes sure that the trip is safe and that there are no effects on our reality. Our MinuteMen agents monitor your trips and can intervene in case of any emergency. Once the trip is over, the timeline is pruned.
     """)
 with st.expander("Requirements to Book a Trip"):
     st.write(""" Physical and psychological requirements:
@@ -80,15 +91,17 @@ with st.expander("Legal considerations"):
 st.header("👤 Traveler Identity")
 st.caption("Provide your personal information for timeline authorization and legal validation.")
 
-# Create 2 columns for the traveler identity
+# Split form into 2 columns for a cleaner layout
 col1, col2 = st.columns(2)
 
+# Left column: name and contact details
 with col1:
     first_name = st.text_input("First Name")
     last_name = st.text_input("Last Name")
     phone = st.text_input("Phone Number", placeholder="+xx xx xxx xx xx")
     email = st.text_input("Email")
 
+# Right column: demographics and address
 with col2:
     birth_date = st.date_input("Birth Date", min_value=date(1900,1,1))
     address = st.text_input("Address")
@@ -104,6 +117,8 @@ st.divider()
 st.header("📦 Choose Your Package")
 st.caption("Each package determines your interaction level inside the selected timeline. A short description can be found on the left of the screen.")
 
+# packages: Dict[str, Dict[str, Union[int, str]]]
+# Maps package name to its base price (per minute in USD) and a description string
 packages = {
     "Peasant Package": {
         "price": 10,
@@ -111,43 +126,44 @@ packages = {
     },
     "Quantum Query": {
         "price": 20,
-        "description": '🗣 Interact with people and objects. Languages must be purchased separately.'
+        "description": '🗣 New identity. Interact with people and objects. Languages must be purchased separately.'
     },
     "Monarch Mode": {
         "price": 50,
-        "description": '👑 Full power. Bring 1 object back. All languages included. Fast travel enabled.'
+        "description": '👑 Full power. Bring 1 object back (max 10kg and for personal use only). All languages included. Fast travel enabled to visit multiple locations.'
     }
 }
 
-# selecting a package from the "packages" dictionary
+# Select a package from the dropdown (keys of the packages dictionary)
 package = st.selectbox("Select Package", list(packages.keys()))
 
-# Display package description in the sidebar
+# Show the package description in the sidebar for quick reference
 st.sidebar.header("📖 Package Description")
 st.sidebar.info(packages[package]["description"])
 
-# Establish base fee for the package
+# base_fee: int — per-minute price in USD for the selected package
 base_fee = packages[package]["price"]
 
 # =========================
-# 👑 IDENTITY & STATUS 
+# 👑 IDENTITY & STATUS
 # =========================
 
-# Initialize base fame and identity multiplier
+# identity_multiplier: float — price multiplier based on selected fame level (default 1.0)
 identity_multiplier = 1.0
+# fame: int — fame level 1-5 (0 = not applicable for Peasant Package)
 fame = 0
 
-# If traveller doesn't choose the peasant package, then he has to choose his fame level. 
+# Identity and fame selection is only shown for non-Peasant packages
 if package != "Peasant Package":
     st.header("👑 Identity & Social Status")
     st.caption("Choose the level of fame and influence you wish to possess in your selected timeline.")
 
     fame = st.selectbox(
-        "Select Fame Level (1 = Unknown Citizen, 5 = Legendary Figure)",
+        "Select Fame Level (1 = Unknown Citizen, 3 = Known Figure, 5 = Very Famous Figure)",
         [1, 2, 3, 4, 5]
     )
 
-    # Change multiplier for high fame level
+    # Higher fame increases the price multiplicatively (each level adds +20%)
     identity_multiplier = 1 + (fame * 0.2)
 
 st.divider()
@@ -158,11 +174,11 @@ st.divider()
 st.header("⏳ Duration of Travel")
 st.caption("Select how long you wish to remain inside the chosen timeline. Pricing is per minute.")
 
-# Base minutes 
+# Initialize session state for minutes slider/input (default: 60 minutes)
 if "minutes" not in st.session_state:
     st.session_state.minutes = 60
 
-# update slider if input in the box
+# update_slider: keeps the slider in sync when the number box changes
 def update_slider():
     """
     Syncs the main 'minutes' slider value with the value entered in the number input box.
@@ -170,7 +186,7 @@ def update_slider():
     """
     st.session_state.minutes = st.session_state.minutes_box
 
-# update box if input in the slider 
+# update_box: keeps the number box in sync when the slider changes
 def update_box():
     """
     Syncs the number input box value with the value selected on the 'minutes' slider.
@@ -180,14 +196,14 @@ def update_box():
 
 col1, col2 = st.columns(2)
 
-# Create slider and box side by side 
+# Slider and number input placed side by side for dual control
 with col1:
     st.slider("Minutes in Timeline", 1, 2880, key="minutes", on_change=update_box)
 
 with col2:
     st.number_input("Exact Minutes", 1, 2880, key="minutes_box", on_change=update_slider)
 
-# Final minutes input 
+# minutes: int — final selected trip duration in minutes
 minutes = st.session_state.minutes
 
 st.divider()
@@ -196,9 +212,9 @@ st.divider()
 # 🌍 TIMELINE
 # =========================
 st.header("🌍 Choose Timeline")
-st.caption("Select the historical period you want to experience. The only butterfly effect will be in your stomach.")
+st.caption("Select the historical period you want to experience. If you want to travel to a specific timeline, scroll to the bottom and select 'Personalized Timeline'.")
 
-# Timeline selection 
+# Dropdown of predefined historical eras, plus a "Personalized" custom option
 timeline = st.selectbox(
     "Favorite Timelines",
     [
@@ -230,7 +246,8 @@ timeline = st.selectbox(
     ]
 )
 
-# input a custom year if personalized and change "timeline" to "Personalized ({custom_year.strip()})
+# If user selects "Personalized", show a text input for a custom year
+# Update timeline string to "Personalized (year)" for storage
 if timeline == "Personalized":
     custom_year = st.text_input("Enter Custom Timeline (Year)", placeholder="e.g. 2024 or -500")
     if custom_year:
@@ -239,13 +256,14 @@ if timeline == "Personalized":
         timeline = "Personalized (Unknown)"
 
 st.divider()
+
 # =========================
 # 📍 SPAWN COUNTRY
 # =========================
 st.header("📍 Spawn Country")
 st.caption("Select the country where you wish to materialize in your chosen timeline. The exact location will be chosen just before your trip.")
 
-# Full country list
+# countries: List[str] — full list of world nations for the spawn country dropdown
 countries = [
     "Afghanistan","Albania","Algeria","Andorra","Angola","Antigua and Barbuda",
     "Argentina","Armenia","Australia","Austria","Azerbaijan","Bahamas","Bahrain",
@@ -283,35 +301,37 @@ countries = [
     "Venezuela","Vietnam","Yemen","Zambia","Zimbabwe"
 ]
 
-# Inizialize select box with Switzerland as default 
+# Default selection is Switzerland; falls back to index 0 if not found
 spawn_country = st.selectbox(
     "Choose Country",
     sorted(countries),
     index=sorted(countries).index("Switzerland") if "Switzerland" in countries else 0
 )
+
 # =========================
 # 🗣 LANGUAGES
 # =========================
+# language_cost: float — total cost of selected languages (only applies to Quantum Query)
 language_cost = 0
 
-# If package is either QQ or MM, show language section
+# Language selection is only shown for Quantum Query and Monarch Mode packages
 if package in ["Quantum Query", "Monarch Mode"]:
     st.header("🗣 Select Languages")
 
-    # different caption according to the package 
+    # Caption differs based on whether languages cost extra or are included
     if package == "Quantum Query":
         st.caption("Purchase communication abilities for your selected era ($50 per language).")
     else:
         st.caption("Select your desired communication abilities (All languages included for free).")
 
-    # Initialize session state safely
+    # Initialize session state for selected and custom languages
     if "selected_languages" not in st.session_state:
         st.session_state.selected_languages = []
 
     if "custom_language" not in st.session_state:
         st.session_state.custom_language = ""
 
-    # Function to add custom language
+    # add_language: function — appends the typed custom language to the selected list
     def add_language():
         """
         Adds the language from the custom text input to the session's selected_languages list.
@@ -322,7 +342,7 @@ if package in ["Quantum Query", "Monarch Mode"]:
             st.session_state.selected_languages.append(lang)
         st.session_state.custom_language = ""
 
-    # Predefined languages
+    # base_languages: List[str] — catalog of historical and modern languages
     base_languages = [
     "Sumerian", "Akkadian", "Egyptian", "Hittite", "Elamite",
     "Sanskrit", "Prakrit", "Pali", "Old Persian", "Avestan",
@@ -347,52 +367,51 @@ if package in ["Quantum Query", "Monarch Mode"]:
     "Azerbaijani", "Turkmen", "Tatar", "Yakut", "Chuvash"
 ]
 
-    # predefined selection of languages
+    # Multiselect widget with predefined languages; pre-selected based on session state
     predefined = st.multiselect(
         "Choose Predefined Languages",
         base_languages,
         default=[lang for lang in st.session_state.selected_languages if lang in base_languages]
     )
 
-    # Keep only custom ones + predefined
+    # Preserve custom (non-predefined) languages and merge with predefined selection
     custom_only = [lang for lang in st.session_state.selected_languages if lang not in base_languages]
     st.session_state.selected_languages = custom_only + predefined
 
-    # Add custom language input
     st.markdown("### Add Custom Language")
-
-    # Custom languages 
+    st.write("You can add custom languages by typing them in the text box below and pressing Enter. Our MinuteMen will verify our data about that language and update it if needed. You will be reimboursed if the language cannot be found.")
+    # Text input that calls add_language() on Enter (on_change)
     st.text_input(
         "Write language name and press Enter",
         key="custom_language",
         on_change=add_language
     )
 
-    # Display selected languages with delete option
+    # Display selected languages with a delete button next to each one
     if st.session_state.selected_languages:
         st.markdown("#### Selected Languages")
 
         for i, lang in enumerate(st.session_state.selected_languages):
             col1, col2 = st.columns([5,1])
 
-            # Show selected languages 
+            # Show the language name in the left column
             with col1:
                 st.write(f"• {lang}")
 
-            # Initialize button to delete languages 
+            # Show a delete button in the right column; removes the language on click
             with col2:
                 if st.button("❌", key=f"delete_{i}"):
                     st.session_state.selected_languages.pop(i)
                     st.rerun()
 
-    # Calculate total language cost
+    # language_cost: float — Quantum Query charges $50 per language; Monarch Mode is free
     if package == "Quantum Query":
         language_cost = 50 * len(st.session_state.selected_languages)
     else:
         language_cost = 0
 
 else:
-    # Reset if switching package
+    # Reset language selection when switching to Peasant Package
     st.session_state.selected_languages = []
 
 # =========================
@@ -401,20 +420,19 @@ else:
 st.header("🛡 Add-ons")
 st.caption("Enhance your safety and psychological protection during travel.")
 
-# Inizialize checkbox 
+# Boolean checkboxes for optional add-ons
 insurance = st.checkbox("Insurance Protection ($200)")
 memory_reset = st.checkbox("Memory Reset ($100)")
 
-# Add description when clicked 
-if insurance:
-    with st.expander("Insurance Description"):
-        st.write("Prevents permanent physical injury upon return. Pain during events cannot be prevented.")
+# Show an expandable description when each add-on is selected
+with st.expander("Insurance Description"):
+    st.write("Prevents permanent physical injury upon return. Pain during events cannot be prevented, we recommend travellers to be careful.")
 
-if memory_reset:
-    with st.expander("Memory Reset Description"):
-        st.write("Optional traumatic event erasure upon return.")
 
-# Calculate cost 
+with st.expander("Memory Reset Description"):
+    st.write("Optional traumatic event erasure upon return.")
+
+# insurance_cost, memory_cost: int — flat cost for each selected add-on (in USD)
 insurance_cost = 200 if insurance else 0
 memory_cost = 100 if memory_reset else 0
 
@@ -428,12 +446,14 @@ st.caption("Select your preferred currency and payment method for this interdime
 
 col_pay1, col_pay2 = st.columns(2)
 
+# Currency selection dropdown
 with col_pay1:
     currency = st.selectbox(
         "Choose Currency",
         ["USD ($)", "EUR (€)", "GBP (£)", "JPY (¥)", "CNY (¥)", "CHF (Fr)", "BTC (Bitcoin)", "ETH (Ethereum)", "CC (ChronoCredits)"]
     )
 
+# Payment method dropdown
 with col_pay2:
     payment_method = st.selectbox(
         "Payment Method",
@@ -446,16 +466,16 @@ st.divider()
 # 💰 PRICE CALCULATION
 # =========================
 
-# --- Safe defaults ---
-# For Peasant package, no languages
+# Guard: ensure selected_languages exists in session state (for Peasant Package)
 if "selected_languages" not in st.session_state:
     st.session_state.selected_languages = []
 
-# For Monarch Mode, no cost 
+# Only Quantum Query charges per language; all others get languages free or N/A
 if package != "Quantum Query":
     language_cost = 0
 
-# --- Currency Rates (Base: USD) ---
+# CURRENCY_RATES: Dict[str, float]
+# Conversion multipliers relative to USD (base currency)
 CURRENCY_RATES = {
     "USD ($)": 1.0,
     "EUR (€)": 0.92,
@@ -468,17 +488,23 @@ CURRENCY_RATES = {
     "CC (ChronoCredits)": 10.0
 }
 
-# --- Calculations ---
+# base_price: float — duration × per-minute rate (USD)
 base_price = minutes * base_fee
+# fame_extra: float — additional charge from identity/fame multiplier
 fame_extra = base_price * (identity_multiplier - 1)
+# subtotal: float — base price + identity upgrade cost
 subtotal = base_price + fame_extra
+# addons_total: float — sum of all optional add-on costs
 addons_total = insurance_cost + memory_cost + language_cost
+# total_price: float — final USD total before currency conversion
 total_price = subtotal + addons_total
 
-# Multi-currency conversion
+# rate: float — conversion factor for the selected currency
 rate = CURRENCY_RATES.get(currency, 1.0)
+# converted_price: float — total in the user's selected currency
 converted_price = total_price * rate
-currency_code = currency.split(' ')[0] # Get 'USD', 'EUR', etc.
+# currency_code: str — short currency code extracted from the label (e.g. "USD" from "USD ($)")
+currency_code = currency.split(' ')[0]
 
 # =========================
 # 🧾 INVOICE DISPLAY
@@ -489,14 +515,14 @@ st.caption("Transparent breakdown of your interdimensional investment.")
 
 st.markdown("### 🧾 Cost Breakdown")
 
-# Minutes
+# Display travel time cost
 st.write(f"⏳ Travel Time: {minutes} min × ${base_fee} = **${base_price:,.2f}**")
 
-# Fame 
+# Display identity upgrade cost if fame level is selected
 if fame > 0:
     st.write(f"👑 Identity Upgrade = **+${fame_extra:,.2f}**")
 
-# Languages (safe version)
+# Display selected languages with individual costs
 if package in ["Quantum Query", "Monarch Mode"] and st.session_state.selected_languages:
     st.write("🗣 Languages:")
     for lang in st.session_state.selected_languages:
@@ -505,11 +531,11 @@ if package in ["Quantum Query", "Monarch Mode"] and st.session_state.selected_la
         else:
             st.write(f"   • {lang} - **Included**")
 
-# Insurance 
+# Display insurance cost if selected
 if insurance:
     st.write(f"🛡 Insurance Protection = **+${insurance_cost:,.2f}**")
 
-# Memory reset
+# Display memory reset cost if selected
 if memory_reset:
     st.write(f"🧠 Memory Reset = **+${memory_cost:,.2f}**")
 
@@ -526,38 +552,37 @@ st.info(f"💳 Final amount in your selected currency: **{converted_price:,.2f} 
 st.divider()
 
 # =========================
-# 🚀 CONFIRM AND INSERTION INTO DATABASE 
+# 🚀 CONFIRM AND INSERTION INTO DATABASE
 # =========================
 
-# If button is pressed, start the database transaction
+# When the Confirm Booking button is pressed, validate and insert all records
 if st.button("Confirm Booking"):
 
-    # 1. Validation: Ensure identity is provided
+    # 1. Validation: both first and last name are required
     if not first_name or not last_name:
         st.error("Please enter traveler identity.")
 
     else:
-        # 2. Database Connection
-        # Create connection with database, use get_connection function defined at the beginning 
+        # 2. Open a database connection using the configured backend
         conn = get_connection()
         cursor = conn.cursor()
 
         # -------------------------
         # 3. INSERT CUSTOMER
         # -------------------------
-        # We use email as the unique identifier to prevent duplicate entries for the same person
+        # Use email as the unique identifier to detect returning customers
         cursor.execute(
             f'SELECT customer_id FROM "Customer" WHERE email={PL}',
             (email,)
         )
-        
-        result = cursor.fetchone()
-        
-        # If the customer already exists, we reuse their ID
-        if result:
-            customer_id = result[0] 
 
-        # If it's a new customer, we create a record for them
+        result = cursor.fetchone()
+
+        # If the customer already exists, reuse their existing ID
+        if result:
+            customer_id = result[0]
+
+        # If this is a new customer, insert their record and retrieve the new ID
         else:
             customer_query = f"""
             INSERT INTO "Customer"
@@ -565,8 +590,9 @@ if st.button("Confirm Booking"):
             VALUES ({PL}, {PL}, {PL}, {PL}, {PL}, {PL}, {PL})
             """
             if os.getenv("SUPABASE_DB_URL"):
+                # RETURNING customer_id fetches the new ID immediately in PostgreSQL
                 customer_query += " RETURNING customer_id"
-                
+
             cursor.execute(customer_query, (
                 first_name,
                 last_name,
@@ -576,25 +602,26 @@ if st.button("Confirm Booking"):
                 email,
                 sex
             ))
-        
-            # Retrieve the newly generated ID
+
+            # Retrieve the newly generated primary key
             if os.getenv("SUPABASE_DB_URL"):
                 customer_id = cursor.fetchone()[0]
             else:
+                # SQLite: use lastrowid to get the last inserted ID
                 customer_id = cursor.lastrowid
 
 
         # -------------------------
         # 4. INSERT TIMELINE
         # -------------------------
-        # Every trip record needs its own Timeline entry (even for custom years)
+        # Every trip gets its own Timeline entry (era label + spawn country as map)
         timeline_query = f"""
         INSERT INTO "Timeline" (timeline_year, map)
         VALUES ({PL}, {PL})
         """
         if os.getenv("SUPABASE_DB_URL"):
             timeline_query += " RETURNING timeline_id"
-            
+
         cursor.execute(timeline_query, (
             timeline,
             spawn_country
@@ -609,21 +636,22 @@ if st.button("Confirm Booking"):
         # -------------------------
         # 5. GET PACKAGE ID
         # -------------------------
-        # We need the primary key ID of the selected package for the Booking table
+        # Look up the integer primary key for the selected package name
         cursor.execute(f'SELECT package_id FROM "Packages" WHERE description={PL}', (package,))
         package_id_result = cursor.fetchone()
+        # package_id: int or None — the matching package's primary key
         package_id = package_id_result[0] if package_id_result else None
 
         # -------------------------
         # 6. ASSIGN RANDOM MINUTEMAN
         # -------------------------
-        # Every trip is monitored by an agent. We pick one at random from our pool.
-        # Get all the agents (fetchall) 
+        # Fetch all available agents from the MinuteMen table
         cursor.execute('SELECT agent_id, agent_name, badge_number FROM "MinuteMen"')
         all_agents = cursor.fetchall()
-        
-        # Use random to choose and assign agent 
+
+        # Randomly select one agent to monitor this trip
         assigned_agent = random.choice(all_agents)
+        # Unpack: agent_id (int), agent_name (str), agent_badge (str)
         agent_id = assigned_agent[0]
         agent_name = assigned_agent[1]
         agent_badge = assigned_agent[2]
@@ -631,11 +659,11 @@ if st.button("Confirm Booking"):
         # -------------------------
         # 7. PROCESS LANGUAGES
         # -------------------------
-        # We store languages as a comma-separated string of IDs for reporting
-        # Initialize list of IDs
+        # We store languages as a comma-separated string of language IDs
+        # language_ids: List[str] — collects the integer ID for each selected language
         language_ids = []
         for lang in st.session_state.selected_languages:
-            # Insert language if it's a "custom" one we haven't seen yet
+            # Insert the language if it doesn't exist yet (custom languages may be new)
             if os.getenv("SUPABASE_DB_URL"):
                 cursor.execute(
                     f'INSERT INTO "Languages" (language_name) VALUES ({PL}) ON CONFLICT (language_name) DO NOTHING',
@@ -646,23 +674,22 @@ if st.button("Confirm Booking"):
                     f'INSERT OR IGNORE INTO "Languages" (language_name) VALUES ({PL})',
                     (lang,)
                 )
-            # Retrieve the ID
+            # Retrieve the language's primary key ID
             cursor.execute(
                 f'SELECT language_id FROM "Languages" WHERE language_name={PL}',
                 (lang,)
             )
 
-            # Add ID to list 
+            # Append the string ID to the list for joining later
             language_ids.append(str(cursor.fetchone()[0]))
 
-        # Join the IDs into a single string (e.g. "1,5,12")
+        # Join all language IDs into a single comma-separated string (e.g. "1,5,12")
         booking_languages_str = ",".join(language_ids)
 
         # -------------------------
-        # INSERT BOOKING
+        # 8. INSERT BOOKING
         # -------------------------
-
-        # Add RETURNING for Postgres to get the ID back immediately
+        # Add RETURNING clause for PostgreSQL to get the new booking_id immediately
         booking_query = f"""
         INSERT INTO "Booking"
         (customer_id, package_id, timeline_id, spawn_country, minutes,
@@ -671,7 +698,7 @@ if st.button("Confirm Booking"):
         """
         if os.getenv("SUPABASE_DB_URL"):
             booking_query += " RETURNING booking_id"
-            
+
         cursor.execute(booking_query, (
             customer_id,
             package_id,
@@ -686,54 +713,58 @@ if st.button("Confirm Booking"):
             agent_id
         ))
 
-        # Create ID
+        # Retrieve the new booking_id from the database
         if os.getenv("SUPABASE_DB_URL"):
             booking_id = cursor.fetchone()[0]
         else:
             booking_id = cursor.lastrowid
 
         # -------------------------
-        # INSERT IDENTITIES & CONFIRM
+        # 8b. INSERT IDENTITY & CONFIRM
         # -------------------------
+        # Only non-Peasant travelers get a fake alias identity
         if package != "Peasant Package":
-            # Generate a massive random realistic alias matching the chosen sex
+            # Generate a realistic fake name matching the traveler's sex using Faker
             if sex == "Male":
                 random_first = fake.first_name_male()
             elif sex == "Female":
                 random_first = fake.first_name_female()
             else:
                 random_first = fake.first_name_nonbinary()
-                
+
             random_last = fake.last_name()
-            
+
             cursor.execute(f"""
         INSERT INTO "Identities" (first_name, last_name, sex, fame_level, booking_id)
         VALUES ({PL}, {PL}, {PL}, {PL}, {PL})
         """, (random_first, random_last, sex, fame, booking_id))
-            
+
             # -------------------------
             # 9. INSERT PAYMENT
             # -------------------------
-            # Link the calculated price and payment method to this specific booking
+            # Link the converted price and payment method to this booking
             cursor.execute(f"""
             INSERT INTO "Payments" (amount, currency, method, customer_id, booking_id)
             VALUES ({PL}, {PL}, {PL}, {PL}, {PL})
             """, (converted_price, currency_code, payment_method, customer_id, booking_id))
 
+            # Save all changes and close the connection
             conn.commit()
             conn.close()
-            
+
             st.success(f"🚀 Booking Confirmed! Your generated timeline alias is **{random_first} {random_last}**. {agent_name} (Badge {agent_badge}) will monitor your travel closely. Do not violate protocol.")
-            
+
         else:
             # -------------------------
-            # 9. INSERT PAYMENT (Peasant)
+            # 9. INSERT PAYMENT (Peasant Package)
             # -------------------------
+            # Peasant travelers have no identity — payment still recorded
             cursor.execute(f"""
             INSERT INTO "Payments" (amount, currency, method, customer_id, booking_id)
             VALUES ({PL}, {PL}, {PL}, {PL}, {PL})
             """, (converted_price, currency_code, payment_method, customer_id, booking_id))
 
+            # Save all changes and close the connection
             conn.commit()
             conn.close()
             st.success(f"🚀 Booking Confirmed for {first_name} {last_name}! {agent_name} (Badge {agent_badge}) has been assigned to guard your spectral observation.")
@@ -742,19 +773,21 @@ if st.button("Confirm Booking"):
 # 📊 ANALYTICS TAB
 # =========================
 
-# Analytics tab : all graphs 
+# All analytics charts are rendered inside the analytics tab context
 with tab_analytics:
     st.header("📊 Time Travel Analytics Dashboard")
     st.caption("Live insights from the booking database.")
 
-    # Try - except because of errors with the database 
+    # Wrap in try/except to gracefully handle database connection failures
     try:
+        # Open a separate analytics connection (does not interfere with booking flow)
         conn_a = get_connection()
 
-        # --- KPI (Key Perfomrance indicator) Row --- 
+        # --- KPI (Key Performance Indicator) Row ---
+        # Display 4 metrics side by side in column layout
         kpi1, kpi2, kpi3, kpi4 = st.columns(4)
 
-        # Use pd.read_sql to select the 4 metrics we want to display 
+        # Use pd.read_sql to query each metric directly from the database
         kpi1.metric("Total Bookings",   pd.read_sql('SELECT COUNT(*) FROM "Booking"', conn_a).iloc[0, 0])
         query_revenue = 'SELECT COALESCE(SUM(total_price),0) FROM "Booking"'
         kpi2.metric("Total Revenue ($)", f"{pd.read_sql(query_revenue, conn_a).iloc[0,0]:,.0f}")
@@ -766,8 +799,8 @@ with tab_analytics:
         # --- Chart 1: Professional Timeline (Full Width) ---
         st.subheader("🌍 Chronological Timeline of Trips")
         st.caption("A log-scaled view of trips throughout history. Hover to see exact years.")
-        
-        # Fetch timeline data
+
+        # Fetch trips grouped by era label
         df_tl_raw = pd.read_sql("""
             SELECT t.timeline_year, COUNT(b.booking_id) AS trips
             FROM "Booking" b
@@ -775,10 +808,11 @@ with tab_analytics:
             GROUP BY t.timeline_year
         """, conn_a)
 
-        # Helper function to extract numeric year from "Name (Year)"
+        # Helper function: extracts the numeric year from strings like "Roman Empire (100)"
+        # Returns int (0 if parsing fails or no parentheses found)
         def extract_year(val):
             try:
-                # Look for content inside parentheses
+                # Look for content inside the trailing parentheses
                 if '(' in val:
                     year_str = val.split('(')[-1].split(')')[0].replace(',', '')
                     return int(year_str)
@@ -786,31 +820,32 @@ with tab_analytics:
             except:
                 return 0
 
+        # Apply the extractor to create a numeric year column for sorting
         df_tl_raw['YearNumeric'] = df_tl_raw['timeline_year'].apply(extract_year)
-        
-        # Sort by year for proper line connection
+
+        # Sort by year so the line chart connects eras chronologically
         df_tl_raw = df_tl_raw.sort_values('YearNumeric')
 
-        # To use a standard 'log' axis (supported by all Plotly versions), 
-        # we transform the year into "Years Before Present".
+        # Transform to "Years Before Present" for a log scale
+        # (log scale requires positive values, and modern years are near-zero)
         present_year = 2026
         df_tl_raw['YearsAgo'] = (present_year - df_tl_raw['YearNumeric']) + 1
-        
-        # Create a Line plot with markers
+
+        # Create a line chart with markers using Plotly Express
         fig_tl = px.line(
             df_tl_raw,
             x='YearsAgo',
             y='trips',
             markers=True,
             hover_name='timeline_year',
-            color_discrete_sequence=["#00D4FF"], # Vibrant Cyan
+            color_discrete_sequence=["#00D4FF"],
             labels={'YearsAgo': 'Years Before Present (Log Scale)', 'trips': 'Number of Bookings'}
         )
 
-        # Use standard 'log' type with reversed axis (Ancient -> Modern)
+        # Use a log x-axis reversed so ancient eras appear on the left
         fig_tl.update_xaxes(type="log", autorange="reversed")
         fig_tl.update_layout(height=450)
-        
+
         st.plotly_chart(fig_tl, use_container_width=True)
         st.info("💡 Note: Timeline uses a logarithmic scale to display everything from the Dinosaurs Era to today accurately.")
 
@@ -821,15 +856,16 @@ with tab_analytics:
         # --- Chart 2: Revenue by Package ---
         with col_right:
             st.subheader("💰 Revenue by Package")
+            # Join Booking and Packages to group revenue and trip counts by package name
             df_pkg = pd.read_sql("""
-                SELECT p.description AS package, 
+                SELECT p.description AS package,
                        COUNT(b.booking_id) AS trips,
                        SUM(b.total_price) AS revenue
                 FROM "Booking" b
                 JOIN "Packages" p ON b.package_id = p.package_id
                 GROUP BY p.description
             """, conn_a)
-            st.bar_chart(df_pkg.set_index("package")["revenue"], color="#FF4B4B") # Red
+            st.bar_chart(df_pkg.set_index("package")["revenue"], color="#FF4B4B")
 
         st.divider()
 
@@ -838,16 +874,18 @@ with tab_analytics:
         # --- Chart 3: Gender Split ---
         with col_left2:
             st.subheader("👤 Traveler Gender Split")
+            # Count customers by sex category
             df_sex = pd.read_sql("""
                 SELECT sex AS sex_col, COUNT(*) AS count_val
                 FROM "Customer"
                 GROUP BY sex
             """, conn_a)
-            st.bar_chart(df_sex.set_index("sex_col"), color="#00FFAA") # Green/Mint
+            st.bar_chart(df_sex.set_index("sex_col"), color="#00FFAA")
 
         # --- Chart 4: MinuteMen Deployments ---
         with col_right2:
             st.subheader("🕵️ MinuteMen Deployments")
+            # Count bookings per agent to show deployment frequency
             df_agents = pd.read_sql("""
                 SELECT m.agent_name AS agent_name_col, COUNT(b.booking_id) AS assignments
                 FROM "Booking" b
@@ -855,7 +893,7 @@ with tab_analytics:
                 GROUP BY m.agent_name
                 ORDER BY assignments DESC
             """, conn_a)
-            st.bar_chart(df_agents.set_index("agent_name_col"), color="#FFD700") # Gold
+            st.bar_chart(df_agents.set_index("agent_name_col"), color="#FFD700")
 
         st.divider()
 
@@ -864,19 +902,23 @@ with tab_analytics:
         # --- Chart 5: Add-ons Distribution ---
         with col_left3:
             st.subheader("🛡 Add-ons Combinations")
+            # Count bookings for each combination of insurance and memory_reset
+            # T_VAL/F_VAL handle boolean literals for the active database type
             none_ct   = pd.read_sql(f'SELECT COUNT(*) FROM "Booking" WHERE insurance = {F_VAL} AND memory_reset = {F_VAL}', conn_a).iloc[0, 0]
             ins_only  = pd.read_sql(f'SELECT COUNT(*) FROM "Booking" WHERE insurance = {T_VAL} AND memory_reset = {F_VAL}', conn_a).iloc[0, 0]
             mem_only  = pd.read_sql(f'SELECT COUNT(*) FROM "Booking" WHERE insurance = {F_VAL} AND memory_reset = {T_VAL}', conn_a).iloc[0, 0]
             both_ct   = pd.read_sql(f'SELECT COUNT(*) FROM "Booking" WHERE insurance = {T_VAL} AND memory_reset = {T_VAL}', conn_a).iloc[0, 0]
+            # Construct a DataFrame from the four counts for charting
             df_addons = pd.DataFrame({
                 "Combination": ["None", "Insurance Only", "Memory Reset Only", "Both"],
                 "Bookings": [none_ct, ins_only, mem_only, both_ct]
             })
-            st.bar_chart(df_addons.set_index("Combination"), color="#BD00FF") # Purple
+            st.bar_chart(df_addons.set_index("Combination"), color="#BD00FF")
 
         # --- Chart 6: Fame Level Distribution ---
         with col_right3:
             st.subheader("👑 Fame Level Distribution")
+            # Count non-zero fame bookings grouped by fame level (1-5)
             df_fame = pd.read_sql("""
                 SELECT fame_level AS fame_level_col, COUNT(*) AS bookings
                 FROM "Booking"
@@ -885,7 +927,7 @@ with tab_analytics:
                 ORDER BY fame_level
             """, conn_a)
             if not df_fame.empty:
-                st.bar_chart(df_fame.set_index("fame_level_col"), color="#FF8A00") # Orange
+                st.bar_chart(df_fame.set_index("fame_level_col"), color="#FF8A00")
             else:
                 st.info("No fame data yet.")
 
@@ -894,7 +936,8 @@ with tab_analytics:
         # --- Chart 7: Violation Distribution ---
         st.subheader("⚖️ Crimes & Violations")
         st.caption("Distribution of reported violations across all trips.")
-        
+
+        # Join Trip_Violations and Violations to count violations by crime type
         df_violations = pd.read_sql("""
             SELECT v.crime AS crime, COUNT(tv.trip_violation_id) AS violation_count
             FROM "Trip_Violations" tv
@@ -904,10 +947,11 @@ with tab_analytics:
         """, conn_a)
 
         if not df_violations.empty:
-            st.bar_chart(df_violations.set_index("crime"), color="#33FF57") # Bright Green
+            st.bar_chart(df_violations.set_index("crime"), color="#33FF57")
         else:
             st.info("No violations recorded. The Timeline is currently stable.")
 
+        # Close the analytics connection after all charts are rendered
         conn_a.close()
 
     except Exception as e:
