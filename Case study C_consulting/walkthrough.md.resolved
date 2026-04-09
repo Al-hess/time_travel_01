@@ -1,0 +1,82 @@
+# Cortho Dataset Exploratory Analysis Report
+
+## Executive Summary
+This report analyzes data from 4,703 hospitals to identify opportunities for increasing sales of orthopedic material. The analysis reveals a significant decline in sales across all hospitals compared to the previous year, highlighting a critical need for new growth strategies.
+
+### Case Overview
+An orthopedic equipment manufacturer provided data from 4,703 hospitals concerning sales of orthopedic material.
+*   **Objective**: Find ways to increase sales.
+*   **Key Variables**: BEDS, RBEDS, OUTV, ADM, SIR, SALESY (Current), SALES12 (Previous), PRHIP, PRKNEE, TH, TRAUMA, REHAB, HIP, KNEE, FEMUR.
+
+---
+
+## 1. Key Data Insights
+
+### Performance Overview
+*   **Total Sales (Current Year)**: $112.5M
+*   **Total Sales (Previous Year)**: $134.8M
+*   **Year-over-Year Growth**: **-16.5%** ($ -22.3M)
+*   **Growth Trend**: Alarmingly, **zero hospitals** showed positive sales growth this year compared to the last. This suggests a systemic market shift or a strong competitive threat.
+
+### Sales Drivers (Correlations)
+The strongest predictors of current sales are:
+1.  **Previous Year Sales (0.95)**: Past performance is the highest indicator.
+2.  **Surgical Volume (0.40)**: The total number of HIP, KNEE, and FEMUR operations.
+3.  **Hospital Infrastructure (0.35)**: Total number of beds and administrative costs.
+
+---
+
+## 2. Visual Analysis
+
+![Distribution of Sales](/C:/Users/User/.gemini/antigravity/brain/d130b6bd-0ab8-480b-b155-dfe7679dd58e/salesy_dist.png)
+*Figure 1: Most hospitals have low sales, with a thin tail of high-value clients.*
+
+![Top Correlations](/C:/Users/User/.gemini/antigravity/brain/d130b6bd-0ab8-480b-b155-dfe7679dd58e/correlations.png)
+*Figure 2: Historical sales and surgical volumes are the primary drivers of current revenue.*
+
+---
+
+## 3. Segment Analysis
+
+We identified three key hospital characteristics that correlate with significantly higher sales:
+
+| Hospital Type | Mean Sales (Category 0) | Mean Sales (Category 1) | Impact |
+| :--- | :--- | :--- | :--- |
+| **Teaching Hospital (TH)** | $17.8k | $47.2k | **+164%** |
+| **Trauma Unit (TRAUMA)** | $21.5k | $57.6k | **+168%** |
+| **Rehab Unit (REHAB)** | $21.0k | $47.9k | **+128%** |
+
+> [!TIP]
+> **Priority Targeting**: Sales efforts should be aggressively focused on **Teaching Hospitals with Trauma Units**, as they generate nearly 3x the average revenue of standard hospitals.
+
+---
+
+## 4. Growth Opportunities
+
+### The "Under-Penetrated" Segment
+We identified **227 hospitals** that have high surgical volumes (Top 25% of the market) but **zero or near-zero sales** of our material. These represent the most immediate opportunities for conversion.
+
+#### Top 5 High-Volume/Zero-Sales Targets:
+| Hospital ID | Total Ops | Beds | TH | Trauma |
+| :--- | :--- | :--- | :--- | :--- |
+| 150 | 2,249 | 192 | Yes | No |
+| 342 | 1,956 | 480 | Yes | No |
+| 24 | 1,111 | 1,005 | Yes | Yes |
+| 1422 | 1,014 | 582 | Yes | No |
+| 25 | 978 | 710 | Yes | Yes |
+
+---
+
+## 5. Strategic Recommendations
+
+1.  **Conversion Campaign**: Launch an aggressive outreach campaign targeting the 227 hospitals with high volumes but zero sales. Hospital #150 alone performs 2,249 operations annually without purchasing our material.
+2.  **Specialized Sales Teams**: Create dedicated teams for **Trauma** and **Teaching Hospitals**. These segments are high-spend and likely require more sophisticated sales approaches.
+3.  **Investigate the Decline**: Conduct qualitative research to understand why *zero* hospitals increased their spending. Is there a new competitor, a pricing issue, or a product quality concern?
+4.  **Sales per Surgery Benchmark**: The average sales per surgery is **$0.17 (in $1000s)**. Use this as a KPI to identify accounts that are under-buying relative to their volume.
+
+---
+
+## Verification Summary
+- **Data Integrity**: Verified 4,703 hospital records with 100% completion (no missing values).
+- **Tooling**: Utilized Python (Pandas, Matplotlib, Seaborn) for robust statistical and visual analysis.
+- **Goal Alignment**: Directly addressed the objective of increasing sales by identifying both high-performing segments and high-potential untapped accounts.

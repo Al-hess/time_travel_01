@@ -1,0 +1,16 @@
+{
+  "folders": [
+    {
+      "name": "?? Kelia Cook",
+      "path": "../kelia_cook"
+    },
+    {
+      "name": "? Time Travel 01",
+      "path": "."
+    }
+  ],
+  "settings": {
+    "editor.fontSize": 14,
+    "files.autoSave": "onFocusChange"
+  }
+}

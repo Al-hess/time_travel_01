@@ -117,7 +117,7 @@ st.divider()
 st.header("📦 Choose Your Package")
 st.caption("Each package determines your interaction level inside the selected timeline. A short description can be found on the left of the screen.")
 
-# packages: Dict[str, Dict[str, Union[int, str]]]
+# packages: Dict{str: Dict{str:int, str:str}}
 # Maps package name to its base price (per minute in USD) and a description string
 packages = {
     "Peasant Package": {
