@@ -5,7 +5,7 @@
 
 # Import standard and third-party packages
 import streamlit as st
-from datetime import date
+from datetime import date, datetime
 import sqlite3
 import os
 import random
@@ -108,6 +108,15 @@ with col2:
     country = st.text_input("Country")
     sex = st.selectbox("Sex", ["Male", "Female", "Other"])
 
+# Age check: calculate traveler's age from birth_date widget value
+# age: int — number of full years elapsed since the entered birth date
+today = date.today()
+age = today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
+
+# Display a warning banner immediately if the traveler is younger than 18
+if age < 18:
+    st.warning(f"⚠️ You must be at least 18 years old to book a trip. Your current age is **{age}**. Booking is not permitted for minors.")
+
 st.divider()
 
 # =========================
@@ -117,7 +126,7 @@ st.divider()
 st.header("📦 Choose Your Package")
 st.caption("Each package determines your interaction level inside the selected timeline. A short description can be found on the left of the screen.")
 
-# packages: Dict{str: Dict{str:int, str:str}}
+# packages: Dict[str, Dict[str, Union[int, str]]]
 # Maps package name to its base price (per minute in USD) and a description string
 packages = {
     "Peasant Package": {
@@ -126,11 +135,11 @@ packages = {
     },
     "Quantum Query": {
         "price": 20,
-        "description": '🗣 New identity. Interact with people and objects. Languages must be purchased separately.'
+        "description": '🗣 Interact with people and objects. Languages must be purchased separately.'
     },
     "Monarch Mode": {
         "price": 50,
-        "description": '👑 Full power. Bring 1 object back (max 10kg and for personal use only). All languages included. Fast travel enabled to visit multiple locations.'
+        "description": '👑 Full power. Bring 1 object back. All languages included. Fast travel enabled.'
     }
 }
 
@@ -159,7 +168,7 @@ if package != "Peasant Package":
     st.caption("Choose the level of fame and influence you wish to possess in your selected timeline.")
 
     fame = st.selectbox(
-        "Select Fame Level (1 = Unknown Citizen, 3 = Known Figure, 5 = Very Famous Figure)",
+        "Select Fame Level (1 = Unknown Citizen, 5 = Legendary Figure)",
         [1, 2, 3, 4, 5]
     )
 
@@ -212,7 +221,7 @@ st.divider()
 # 🌍 TIMELINE
 # =========================
 st.header("🌍 Choose Timeline")
-st.caption("Select the historical period you want to experience. If you want to travel to a specific timeline, scroll to the bottom and select 'Personalized Timeline'.")
+st.caption("Select the historical period you want to experience. The only butterfly effect will be in your stomach.")
 
 # Dropdown of predefined historical eras, plus a "Personalized" custom option
 timeline = st.selectbox(
@@ -379,7 +388,7 @@ if package in ["Quantum Query", "Monarch Mode"]:
     st.session_state.selected_languages = custom_only + predefined
 
     st.markdown("### Add Custom Language")
-    st.write("You can add custom languages by typing them in the text box below and pressing Enter. Our MinuteMen will verify our data about that language and update it if needed. You will be reimboursed if the language cannot be found.")
+
     # Text input that calls add_language() on Enter (on_change)
     st.text_input(
         "Write language name and press Enter",
@@ -425,12 +434,13 @@ insurance = st.checkbox("Insurance Protection ($200)")
 memory_reset = st.checkbox("Memory Reset ($100)")
 
 # Show an expandable description when each add-on is selected
-with st.expander("Insurance Description"):
-    st.write("Prevents permanent physical injury upon return. Pain during events cannot be prevented, we recommend travellers to be careful.")
+if insurance:
+    with st.expander("Insurance Description"):
+        st.write("Prevents permanent physical injury upon return. Pain during events cannot be prevented.")
 
-
-with st.expander("Memory Reset Description"):
-    st.write("Optional traumatic event erasure upon return.")
+if memory_reset:
+    with st.expander("Memory Reset Description"):
+        st.write("Optional traumatic event erasure upon return.")
 
 # insurance_cost, memory_cost: int — flat cost for each selected add-on (in USD)
 insurance_cost = 200 if insurance else 0
@@ -558,11 +568,14 @@ st.divider()
 # When the Confirm Booking button is pressed, validate and insert all records
 if st.button("Confirm Booking"):
 
-    # 1. Validation: both first and last name are required
+    # 1. Validation: both first and last name are required, and traveler must be 18+
     if not first_name or not last_name:
         st.error("Please enter traveler identity.")
 
-    else:
+    elif age < 18:
+        st.error(f"🚫 Booking denied. You must be at least 18 years old. Current age: **{age}**.")
+
+    elif age >= 18:
         # 2. Open a database connection using the configured backend
         conn = get_connection()
         cursor = conn.cursor()
@@ -680,11 +693,8 @@ if st.button("Confirm Booking"):
                 (lang,)
             )
 
-            # Append the string ID to the list for joining later
+            # Append the string ID to the list for later
             language_ids.append(str(cursor.fetchone()[0]))
-
-        # Join all language IDs into a single comma-separated string (e.g. "1,5,12")
-        booking_languages_str = ",".join(language_ids)
 
         # -------------------------
         # 8. INSERT BOOKING
@@ -693,8 +703,8 @@ if st.button("Confirm Booking"):
         booking_query = f"""
         INSERT INTO "Booking"
         (customer_id, package_id, timeline_id, spawn_country, minutes,
-         insurance, memory_reset, total_price, booking_languages, fame_level, agent_id)
-        VALUES ({PL}, {PL}, {PL}, {PL}, {PL}, {PL}, {PL}, {PL}, {PL}, {PL}, {PL})
+         insurance, memory_reset, total_price, fame_level, agent_id)
+        VALUES ({PL}, {PL}, {PL}, {PL}, {PL}, {PL}, {PL}, {PL}, {PL}, {PL})
         """
         if os.getenv("SUPABASE_DB_URL"):
             booking_query += " RETURNING booking_id"
@@ -708,7 +718,6 @@ if st.button("Confirm Booking"):
             insurance,
             memory_reset,
             total_price,
-            booking_languages_str,
             fame,
             agent_id
         ))
@@ -734,10 +743,28 @@ if st.button("Confirm Booking"):
 
             random_last = fake.last_name()
 
-            cursor.execute(f"""
+            identity_query = f"""
         INSERT INTO "Identities" (first_name, last_name, sex, fame_level, booking_id)
         VALUES ({PL}, {PL}, {PL}, {PL}, {PL})
-        """, (random_first, random_last, sex, fame, booking_id))
+        """
+            if os.getenv("SUPABASE_DB_URL"):
+                identity_query += " RETURNING identity_id"
+
+            cursor.execute(identity_query, (random_first, random_last, sex, fame, booking_id))
+
+            if os.getenv("SUPABASE_DB_URL"):
+                identity_id = cursor.fetchone()[0]
+            else:
+                identity_id = cursor.lastrowid
+
+            # -------------------------
+            # 8c. INSERT BOOKING LANGUAGES
+            # -------------------------
+            for lang_id in language_ids:
+                cursor.execute(f"""
+                INSERT INTO "Booking_Languages" (booking_id, identity_id, language_id)
+                VALUES ({PL}, {PL}, {PL})
+                """, (booking_id, identity_id, lang_id))
 
             # -------------------------
             # 9. INSERT PAYMENT
